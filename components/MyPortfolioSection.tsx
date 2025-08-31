@@ -409,9 +409,10 @@ interface MyPortfolioSectionProps {
     portfolios: PortfolioMonitorData[];
     etfData: Record<string, Etf>;
     onUpdate: (data: PortfolioMonitorData) => void;
+    onResetAll: () => void;
 }
 
-const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etfData, onUpdate }) => {
+const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etfData, onUpdate, onResetAll }) => {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingData, setEditingData] = useState<PortfolioMonitorData | null>(null);
@@ -454,6 +455,14 @@ const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etf
         <section className="fade-in">
             <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
                 <h2 className="text-2xl font-semibold text-amber-400">📊 내 포트폴리오 관리</h2>
+                {portfolios.length > 0 && (
+                    <button
+                        onClick={onResetAll}
+                        className="bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors"
+                    >
+                        전체 초기화
+                    </button>
+                )}
             </div>
 
             <div className="space-y-4">

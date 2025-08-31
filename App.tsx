@@ -12,6 +12,7 @@ import LoadingOverlay from './components/LoadingOverlay';
 import AlertModal from './components/AlertModal';
 import Navigation from './components/Navigation';
 import ApiKeyModal from './components/ApiKeyModal';
+import ConfirmModal from './components/ConfirmModal';
 
 const curateEtfPoolForAI = (allEtfs: Etf[], riskProfile: RiskProfile, investmentTheme: InvestmentTheme): Etf[] => {
     const selectEtfsByRisk = (etfs: Etf[]): Etf[] => {
@@ -144,6 +145,7 @@ const App: React.FC = () => {
     const [loadingMessage, setLoadingMessage] = useState('ETF 데이터 가져오는 중...');
     
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
+    const [confirmInfo, setConfirmInfo] = useState<{ title: string; message: string; onConfirm: () => void; } | null>(null);
     const [simulationResults, setSimulationResults] = useState<SimulationResult[] | null>(null);
     const [simulationInputs, setSimulationInputs] = useState<{currentAge: number, investmentPeriod: number} | null>(null);
 
@@ -259,6 +261,19 @@ const App: React.FC = () => {
 
     const handleUpdatePortfolio = (updatedData: PortfolioMonitorData) => {
         setTrackedPortfolios(prev => prev.map(p => (p.id === updatedData.id ? updatedData : p)));
+    };
+
+    const handleResetAllPortfolios = () => {
+        setConfirmInfo({
+            title: "데이터 초기화 확인",
+            message: "정말로 모든 포트폴리오 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
+            onConfirm: () => {
+                setTrackedPortfolios([]);
+                setActiveTab('simulator');
+                setConfirmInfo(null);
+                showAlert("초기화 완료", "모든 포트폴리오 데이터가 삭제되었습니다.");
+            }
+        });
     };
 
     const calculatePortfolio = (
@@ -407,6 +422,14 @@ const App: React.FC = () => {
                 message={alertInfo?.message ?? ''}
                 onClose={() => setAlertInfo(null)}
             />
+            <ConfirmModal
+                isVisible={!!confirmInfo}
+                title={confirmInfo?.title ?? ''}
+                message={confirmInfo?.message ?? ''}
+                onConfirm={() => confirmInfo?.onConfirm()}
+                onClose={() => setConfirmInfo(null)}
+                confirmText="삭제"
+            />
             <ApiKeyModal
                 isOpen={isApiKeyModalOpen}
                 onClose={() => setIsApiKeyModalOpen(false)}
@@ -433,6 +456,7 @@ const App: React.FC = () => {
                         portfolios={trackedPortfolios}
                         etfData={etfData}
                         onUpdate={handleUpdatePortfolio}
+                        onResetAll={handleResetAllPortfolios}
                     />
                 )}
 
