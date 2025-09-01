@@ -31,6 +31,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSel
     const chartLabels = Array.from({ length: result.periodYears + 1 }, (_, i) => `${i}년차`);
     const yearlyAssetData = result.assetGrowth.filter((_, i) => i % 12 === 0);
     const yearlyDividendData = result.dividendGrowth.filter((_, i) => i % 12 === 0);
+    const finalMonthlyDividend = result.dividendGrowth[result.dividendGrowth.length - 1];
 
     return (
         <div 
@@ -71,10 +72,10 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSel
                 <div className="bg-gray-900/50 p-4 rounded-lg flex flex-col justify-center items-center text-center">
                     <h4 className="font-semibold text-lg text-cyan-400 mb-2">{result.periodYears}년 후 예상 결과</h4>
                     <p className="text-2xl font-bold text-white">{formatCurrency(result.targetAssets)}</p>
-                    <p className="text-gray-400">예상 총자산</p>
+                    <p className="text-gray-400">예상 총자산 <span className="text-sm">(현재 가치: {formatCurrency(result.inflationAdjustedTargetAssets)})</span></p>
                     <div className="w-20 h-px bg-gray-600 my-3"></div>
-                    <p className="text-2xl font-bold text-white">{formatCurrency(result.targetAssets * result.postTaxYield / 12)}</p>
-                    <p className="text-gray-400">예상 월 배당금 (세후)</p>
+                    <p className="text-2xl font-bold text-white">{formatCurrency(finalMonthlyDividend)}</p>
+                    <p className="text-gray-400">예상 월 배당금 (세후) <span className="text-sm">(현재 가치: {formatCurrency(result.inflationAdjustedMonthlyDividend)})</span></p>
                 </div>
             </div>
 
@@ -111,9 +112,10 @@ interface ResultsSectionProps {
     results: SimulationResult[];
     inputs: { currentAge: number; investmentPeriod: number };
     onSelectPortfolio: (portfolio: PortfolioScenario, monthlyInvestment: number) => void;
+    onReset: () => void;
 }
 
-const ResultsSection: React.FC<ResultsSectionProps> = ({ results, inputs, onSelectPortfolio }) => {
+const ResultsSection: React.FC<ResultsSectionProps> = ({ results, inputs, onSelectPortfolio, onReset }) => {
     const resultsRef = React.useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -124,17 +126,25 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ results, inputs, onSele
 
     const primaryResult = results[0];
     const targetAge = inputs.currentAge + inputs.investmentPeriod;
-    const finalMonthlyDividend = primaryResult.targetAssets * primaryResult.postTaxYield / 12;
+    const finalMonthlyDividend = primaryResult.dividendGrowth[primaryResult.dividendGrowth.length - 1];
 
     return (
         <section ref={resultsRef} className="fade-in">
-            <h2 className="text-2xl font-semibold text-amber-400 mb-6 border-b-2 border-amber-400/30 pb-2">시뮬레이션 결과 보고서</h2>
+            <div className="flex justify-between items-center mb-6 border-b-2 border-amber-400/30 pb-2">
+                <h2 className="text-2xl font-semibold text-amber-400">시뮬레이션 결과 보고서</h2>
+                 <button
+                    onClick={onReset}
+                    className="bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors"
+                >
+                    시뮬레이션 초기화
+                </button>
+            </div>
             <div className="bg-gray-800 p-6 rounded-2xl mb-8 text-center fade-in">
                  <p className="text-xl md:text-2xl leading-relaxed">
                     (예상) 매월 <span className="font-bold text-green-400">{formatCurrencyShort(primaryResult.monthlyInvestment)}</span> 투자 시,<br/>
                     자녀가 <span className="font-bold text-amber-400">{targetAge}세</span>가 되었을 때,<br/>
-                    월 배당 <span className="font-bold text-indigo-400">{formatCurrencyShort(finalMonthlyDividend)}</span>, 
-                    총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(primaryResult.targetAssets)}</span> 달성이 기대됩니다.
+                    총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(primaryResult.targetAssets)}</span> <span className="text-base text-gray-400">(현재 가치 {formatCurrencyShort(primaryResult.inflationAdjustedTargetAssets)})</span>,<br/>
+                    월 배당 <span className="font-bold text-indigo-400">{formatCurrencyShort(finalMonthlyDividend)}</span> <span className="text-base text-gray-400">(현재 가치 {formatCurrencyShort(primaryResult.inflationAdjustedMonthlyDividend)})</span> 달성이 기대됩니다.
                 </p>
             </div>
             <div className="space-y-8">

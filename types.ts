@@ -44,6 +44,8 @@ export interface SimulationResult {
     assetGrowth: number[];
     dividendGrowth: number[];
     periodYears: number;
+    inflationAdjustedTargetAssets: number;
+    inflationAdjustedMonthlyDividend: number;
 }
 
 export interface MonthlyEntry {

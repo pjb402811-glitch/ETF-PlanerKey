@@ -7,7 +7,8 @@ interface SimulatorFormProps {
         currentAge: number,
         investmentPeriod: number,
         riskProfile: RiskProfile,
-        investmentTheme: InvestmentTheme
+        investmentTheme: InvestmentTheme,
+        inflationRate: number
     ) => void;
 }
 
@@ -25,6 +26,7 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
     const [monthlyInvestment, setMonthlyInvestment] = useState('100');
     const [currentAge, setCurrentAge] = useState('5');
     const [investmentPeriod, setInvestmentPeriod] = useState('20');
+    const [inflationRate, setInflationRate] = useState('2.5');
     const [riskProfile, setRiskProfile] = useState<RiskProfile>('balanced');
     const [investmentTheme, setInvestmentTheme] = useState<InvestmentTheme>('ai-recommended');
     
@@ -72,13 +74,14 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
 
         const currentAgeVal = parseInt(currentAge) || 0;
         const investmentPeriodVal = parseInt(investmentPeriod) || 0;
+        const inflationRateVal = parseFloat(inflationRate) || 0;
 
         if (goal.value <= 0 || currentAgeVal <= 0 || investmentPeriodVal <= 0) {
             alert("입력값을 확인해주세요. 목표 또는 투자 금액, 나이, 기간은 0보다 커야 합니다.");
             return;
         }
         
-        onSubmit(goal, currentAgeVal, investmentPeriodVal, riskProfile, investmentTheme);
+        onSubmit(goal, currentAgeVal, investmentPeriodVal, riskProfile, investmentTheme, inflationRateVal);
     };
 
     return (
@@ -160,18 +163,27 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
                         </div>
                     </div>
 
-                    <div>
-                        <label htmlFor="current-age" className="block text-sm font-medium text-gray-300 mb-2">자녀의 현재 나이 (세)</label>
-                        <div className="flex items-center bg-gray-700 rounded-lg">
-                            <input type="number" id="current-age" value={currentAge} onChange={e => setCurrentAge(e.target.value)} className="w-full bg-transparent p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="예: 5" />
-                            <span className="text-gray-400 pr-4 flex-shrink-0">세</span>
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label htmlFor="current-age" className="block text-sm font-medium text-gray-300 mb-2">자녀의 현재 나이 (세)</label>
+                            <div className="flex items-center bg-gray-700 rounded-lg">
+                                <input type="number" id="current-age" value={currentAge} onChange={e => setCurrentAge(e.target.value)} className="w-full bg-transparent p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="예: 5" />
+                                <span className="text-gray-400 pr-4 flex-shrink-0">세</span>
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <label htmlFor="investment-period" className="block text-sm font-medium text-gray-300 mb-2">총 투자 기간 (년)</label>
-                        <div className="flex items-center bg-gray-700 rounded-lg">
-                            <input type="number" id="investment-period" value={investmentPeriod} onChange={e => setInvestmentPeriod(e.target.value)} className="w-full bg-transparent p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="예: 20" />
-                            <span className="text-gray-400 pr-4 flex-shrink-0">년</span>
+                        <div>
+                            <label htmlFor="investment-period" className="block text-sm font-medium text-gray-300 mb-2">총 투자 기간 (년)</label>
+                            <div className="flex items-center bg-gray-700 rounded-lg">
+                                <input type="number" id="investment-period" value={investmentPeriod} onChange={e => setInvestmentPeriod(e.target.value)} className="w-full bg-transparent p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="예: 20" />
+                                <span className="text-gray-400 pr-4 flex-shrink-0">년</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label htmlFor="inflation-rate" className="block text-sm font-medium text-gray-300 mb-2">연평균 물가상승률</label>
+                            <div className="flex items-center bg-gray-700 rounded-lg">
+                                <input type="number" step="0.1" id="inflation-rate" value={inflationRate} onChange={e => setInflationRate(e.target.value)} className="w-full bg-transparent p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="예: 2.5" />
+                                <span className="text-gray-400 pr-4 flex-shrink-0">%</span>
+                            </div>
                         </div>
                     </div>
                 </div>

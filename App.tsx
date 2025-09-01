@@ -210,7 +210,15 @@ const App: React.FC = () => {
         setIsLoading(true);
         setLoadingMessage('최신 ETF 데이터를 가져오고 분석 중...');
         try {
-            const { data, categories } = await getEtfData();
+            let data: Record<string, Etf>;
+            const savedEtfs = localStorage.getItem('userEtfData');
+            if (savedEtfs) {
+                data = JSON.parse(savedEtfs);
+            } else {
+                const defaultData = await getEtfData();
+                data = defaultData.data;
+            }
+            const categories = [...new Set(Object.values(data).map(etf => etf.category))].sort();
             setEtfData(data);
             setEtfCategories(categories);
         } catch (error) {
@@ -276,10 +284,57 @@ const App: React.FC = () => {
         });
     };
 
+    const handleSaveEtf = (etfToSave: Etf) => {
+        const newEtfData = { ...etfData, [etfToSave.ticker]: etfToSave };
+        setEtfData(newEtfData);
+        setEtfCategories([...new Set(Object.values(newEtfData).map(etf => etf.category))].sort());
+        localStorage.setItem('userEtfData', JSON.stringify(newEtfData));
+        showAlert("저장 완료", `${etfToSave.ticker} ETF 정보가 저장되었습니다.`);
+    };
+
+    const handleDeleteEtf = (tickerToDelete: string) => {
+        setConfirmInfo({
+            title: "ETF 삭제 확인",
+            message: `정말로 '${tickerToDelete}' ETF를 목록에서 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`,
+            onConfirm: () => {
+                const { [tickerToDelete]: deleted, ...rest } = etfData;
+                setEtfData(rest);
+                setEtfCategories([...new Set(Object.values(rest).map(etf => etf.category))].sort());
+                localStorage.setItem('userEtfData', JSON.stringify(rest));
+                setConfirmInfo(null);
+                showAlert("삭제 완료", `${tickerToDelete} ETF가 삭제되었습니다.`);
+            }
+        });
+    };
+
+    const handleResetEtfs = () => {
+        setConfirmInfo({
+            title: "ETF 목록 초기화",
+            message: "정말로 ETF 목록을 기본값으로 초기화하시겠습니까?\n모든 직접 추가/수정한 내용이 사라집니다.",
+            onConfirm: async () => {
+                setConfirmInfo(null);
+                setIsLoading(true);
+                setLoadingMessage('기본 ETF 데이터로 초기화하는 중...');
+                try {
+                    localStorage.removeItem('userEtfData');
+                    const { data, categories } = await getEtfData();
+                    setEtfData(data);
+                    setEtfCategories(categories);
+                    showAlert("초기화 완료", "ETF 목록이 기본값으로 복원되었습니다.");
+                } catch (e) {
+                    showAlert("오류", "초기화에 실패했습니다.");
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        });
+    };
+
     const calculatePortfolio = (
         goal: SimulationGoal,
         period: number,
-        scenario: PortfolioScenario
+        scenario: PortfolioScenario,
+        inflationRate: number
     ): SimulationResult => {
         let portfolioAvgYield = 0;
         let portfolioTotalReturn = 0;
@@ -292,6 +347,7 @@ const App: React.FC = () => {
         });
 
         const postTaxYield = portfolioAvgYield * (1 - 0.154);
+        const inflation = inflationRate / 100;
         
         const n = period * 12;
         const r = portfolioTotalReturn / 12;
@@ -303,12 +359,15 @@ const App: React.FC = () => {
         if (goal.type === 'investment') {
             monthlyInvestment = goal.value;
         } else {
+            // Adjust the goal for inflation to find the future nominal value needed
+            const futureGoalValue = goal.value * Math.pow(1 + inflation, period);
+
             let targetGoalAssets: number;
             if (goal.type === 'dividend') {
-                const annualTargetDividend = goal.value * 12;
+                const annualTargetDividend = futureGoalValue * 12;
                 targetGoalAssets = postTaxYield > 0 ? annualTargetDividend / postTaxYield : Infinity;
             } else { // goal.type === 'asset'
-                targetGoalAssets = goal.value;
+                targetGoalAssets = futureGoalValue;
             }
             monthlyInvestment = FVA_factor > 0 ? targetGoalAssets / FVA_factor : 0;
             monthlyInvestment = Math.max(0, monthlyInvestment);
@@ -324,15 +383,23 @@ const App: React.FC = () => {
             assetGrowth.push(currentAssets);
             dividendGrowth.push(currentAssets * postTaxYield / 12);
         }
+        
+        const finalNominalAssets = assetGrowth[assetGrowth.length - 1];
+        const finalNominalMonthlyDividend = dividendGrowth[dividendGrowth.length - 1];
+        
+        const inflationAdjustedTargetAssets = finalNominalAssets / Math.pow(1 + inflation, period);
+        const inflationAdjustedMonthlyDividend = finalNominalMonthlyDividend / Math.pow(1 + inflation, period);
 
         return { 
             scenario, 
-            targetAssets: assetGrowth[assetGrowth.length - 1],
+            targetAssets: finalNominalAssets,
             monthlyInvestment, 
             postTaxYield, 
             assetGrowth, 
             dividendGrowth, 
-            periodYears: period 
+            periodYears: period,
+            inflationAdjustedTargetAssets,
+            inflationAdjustedMonthlyDividend,
         };
     };
 
@@ -341,7 +408,8 @@ const App: React.FC = () => {
         currentAge: number,
         investmentPeriod: number,
         riskProfile: RiskProfile,
-        investmentTheme: InvestmentTheme
+        investmentTheme: InvestmentTheme,
+        inflationRate: number
     ) => {
         if (!apiKey) {
             showAlert("API Key 필요", "AI 포트폴리오를 생성하려면 Google AI API Key가 필요합니다. 우측 상단 설정 아이콘을 눌러 Key를 입력해주세요.");
@@ -389,7 +457,8 @@ const App: React.FC = () => {
             const results = scenariosToSimulate.map(scenario => calculatePortfolio(
                 goalInWon,
                 investmentPeriod,
-                scenario
+                scenario,
+                inflationRate
             ));
             
             const sortedResults = results.sort((a, b) => {
@@ -411,6 +480,11 @@ const App: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+    
+    const handleResetSimulation = () => {
+        setSimulationResults(null);
+        setSimulationInputs(null);
     };
 
     return (
@@ -445,9 +519,16 @@ const App: React.FC = () => {
 
                 {activeTab === 'simulator' && (
                     <>
-                        <EtfInfoSection etfData={etfData} categories={etfCategories} />
+                        <EtfInfoSection 
+                            etfData={etfData} 
+                            categories={etfCategories}
+                            apiKey={apiKey}
+                            onSaveEtf={handleSaveEtf}
+                            onDeleteEtf={handleDeleteEtf}
+                            onResetEtfs={handleResetEtfs}
+                        />
                         <SimulatorForm onSubmit={handleSimulation} />
-                        {simulationResults && simulationInputs && <ResultsSection results={simulationResults} inputs={simulationInputs} onSelectPortfolio={handleSelectPortfolio} />}
+                        {simulationResults && simulationInputs && <ResultsSection results={simulationResults} inputs={simulationInputs} onSelectPortfolio={handleSelectPortfolio} onReset={handleResetSimulation} />}
                     </>
                 )}
                 
@@ -466,7 +547,7 @@ const App: React.FC = () => {
                         <li>본 시뮬레이션은 과거 데이터를 기반으로 한 AI의 예상치이며, 미래 수익률을 보장하지 않습니다.</li>
                         <li>세금(배당소득세 15.4%)이 일부 반영되었으나, 개인별 금융소득종합과세 등은 고려되지 않았습니다.</li>
                         <li>시장 상황에 따라 수익률과 배당금은 언제든지 변동될 수 있으며, 투자의 최종 결정과 책임은 투자자 본인에게 있습니다.</li>
-                        <li>화폐가치 하락(인플레이션)은 반영되지 않았으므로, 목표 금액 설정 시 참고하시기 바랍니다.</li>
+                        <li>연평균 물가상승률을 적용하여 목표 금액의 미래 가치를 추산하고, 최종 결과의 현재 가치를 함께 표시합니다.</li>
                         <li>AI가 추천하는 ETF 및 포트폴리오는 정보 제공을 목적으로 하며, 투자 권유가 아닙니다.</li>
                     </ul>
                     <h3 className="font-semibold text-gray-400 mt-6 mb-2">면책조항 (Disclaimer)</h3>
