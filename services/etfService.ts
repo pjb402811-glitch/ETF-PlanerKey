@@ -52,6 +52,21 @@ const allEtfData: Record<string, Omit<Etf, 'ticker' | 'color'>> = {
 
     // Market Index
     "VOO": { name: "Vanguard S&P 500 ETF", desc: "미국 S&P 500 지수를 추종하며, 미국 대표 500개 대기업에 분산 투자합니다.", pros: "낮은 보수, 높은 안정성, 시장 전체 성장 추종", cons: "폭발적 고성장 기대는 어려움, 상대적으로 낮은 배당률", yield: 0.015, growth: 0.085, risk: '중립', category: '시장 대표' },
+
+    // 2X Leveraged
+    "QLD": { name: "ProShares Ultra QQQ", desc: "나스닥 100 지수의 일일 수익률을 2배로 추종하는 레버리지 ETF입니다.", pros: "상승장에서의 극대화된 수익률", cons: "변동성 끌림(Decay) 현상, 장기 투자 시 높은 위험", yield: 0.0, growth: 0.26, risk: '높음', category: '2X' },
+    "SSO": { name: "ProShares Ultra S&P500", desc: "S&P 500 지수의 일일 수익률을 2배로 추종하는 레버리지 ETF입니다.", pros: "미국 대표 지수 상승 시 2배 수익", cons: "횡보 또는 하락장에서 원금 손실 위험 매우 큼", yield: 0.0, growth: 0.17, risk: '높음', category: '2X' },
+    "DDM": { name: "ProShares Ultra Dow30", desc: "다우존스 30 산업평균지수의 일일 수익률을 2배로 추종합니다.", pros: "우량주 지수에 대한 레버리지 투자", cons: "QLD, SSO보다 낮은 변동성, 그러나 여전히 위험", yield: 0.0, growth: 0.14, risk: '높음', category: '2X' },
+    "USD": { name: "ProShares Ultra Semiconductors", desc: "미국 반도체 지수의 일일 수익률을 2배로 추종하는 레버리지 ETF입니다.", pros: "반도체 산업 상승 시 극대화된 수익", cons: "극심한 산업 사이클 변동성, 장기 투자 시 높은 위험", yield: 0.0, growth: 0.28, risk: '높음', category: '2X' },
+    "ROM": { name: "ProShares Ultra Technology", desc: "미국 기술 지수의 일일 수익률을 2배로 추종하는 레버리지 ETF입니다.", pros: "기술주 상승장에서의 극대화된 수익", cons: "높은 변동성, 장기 투자 위험", yield: 0.0, growth: 0.24, risk: '높음', category: '2X' },
+    "RXL": { name: "ProShares Ultra Health Care", desc: "미국 헬스케어 지수의 일일 수익률을 2배로 추종합니다.", pros: "헬스케어 섹터 성장에 대한 레버리지 투자", cons: "규제 변화에 민감, 횡보/하락장 위험", yield: 0.0, growth: 0.16, risk: '높음', category: '2X' },
+    "DIG": { name: "ProShares Ultra Oil & Gas", desc: "미국 석유 및 가스 지수의 일일 수익률을 2배로 추종합니다.", pros: "유가 상승 시 높은 수익 기대", cons: "에너지 가격 변동성에 크게 노출, 매우 높은 위험", yield: 0.0, growth: 0.15, risk: '높음', category: '2X' },
+    "UYG": { name: "ProShares Ultra Financials", desc: "미국 금융 지수의 일일 수익률을 2배로 추종합니다.", pros: "경기 확장 국면에서 수익 극대화", cons: "경기 침체 시 매우 높은 위험", yield: 0.0, growth: 0.12, risk: '높음', category: '2X' },
+    "UWM": { name: "ProShares Ultra Russell2000", desc: "러셀 2000(중소형주) 지수의 일일 수익률을 2배로 추종합니다.", pros: "중소형주 상승장에서 높은 수익 기대", cons: "대형주보다 높은 변동성, 장기 투자 위험", yield: 0.0, growth: 0.18, risk: '높음', category: '2X' },
+    "BITX": { name: "2x Bitcoin Strategy ETF", desc: "비트코인 선물 지수의 일일 수익률을 2배로 추종하는 ETF입니다.", pros: "비트코인 가격 상승 시 극대화된 수익", cons: "극심한 변동성, 가상자산 관련 규제 리스크", yield: 0.0, growth: 0.30, risk: '높음', category: '2X' },
+    "ETHU": { name: "2x Ether Strategy ETF", desc: "이더리움 선물 지수의 일일 수익률을 2배로 추종하는 ETF입니다.", pros: "이더리움 상승장에서 높은 수익 기대", cons: "BITX와 유사하게 매우 높은 위험성", yield: 0.0, growth: 0.32, risk: '높음', category: '2X' },
+    "SOLT": { name: "2x Solana Strategy ETF", desc: "솔라나(SOL)의 일일 수익률을 2배로 추종하는 가상 ETF입니다.", pros: "알트코인 대장주 중 하나인 솔라나 상승 시 초고수익", cons: "가상자산 중에서도 극도로 높은 변동성", yield: 0.0, growth: 0.35, risk: '높음', category: '2X' },
+    "XXRP": { name: "2x XRP Strategy ETF", desc: "리플(XRP)의 일일 수익률을 2배로 추종하는 가상 ETF입니다.", pros: "리플 가격 상승 시 높은 수익을 기대할 수 있음", cons: "소송 등 규제 리스크가 큰 자산에 대한 레버리지 투자", yield: 0.0, growth: 0.28, risk: '높음', category: '2X' },
 };
 
 export const getEtfData = async (): Promise<{ data: Record<string, Etf>, categories: string[] }> => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import type { Etf, PortfolioScenario, SimulationResult, RiskProfile, InvestmentTheme, SimulationGoal, PortfolioMonitorData } from './types';
 import { getEtfData } from './services/etfService';
 import { generateAiPortfolio } from './services/geminiService';
-import { portfolioScenarios as defaultScenarios } from './constants';
+import { portfolioScenarios as defaultScenarios, leveragedScenarios } from './constants';
 import Header from './components/Header';
 import EtfInfoSection from './components/EtfInfoSection';
 import SimulatorForm from './components/SimulatorForm';
@@ -66,6 +66,9 @@ const curateEtfPoolForAI = (allEtfs: Etf[], riskProfile: RiskProfile, investment
         case 'crypto-focused':
             themeFilteredEtfs = allEtfs.filter(etf => etf.category === '가상자산');
             break;
+        case '2x-growth':
+            themeFilteredEtfs = allEtfs.filter(etf => etf.category === '2X');
+            break;
         default:
             return selectEtfsByRisk(allEtfs);
     }
@@ -111,6 +114,7 @@ const migratePortfolioData = (p: any): PortfolioMonitorData => {
         currentTrackingYear: p.currentTrackingYear || new Date().getFullYear(),
         trackingHistory: p.trackingHistory || getNewTrackingHistory(p.portfolio).trackingHistory,
         yearlyAdjustments: p.yearlyAdjustments || {},
+        simulationProjection: p.simulationProjection, // Keep existing projection data
     };
 
     if (migrated.trackingHistory) {
@@ -135,6 +139,23 @@ const migratePortfolioData = (p: any): PortfolioMonitorData => {
     delete (migrated as any).principalAdjustment;
 
     return migrated;
+};
+
+const categoryOrder = ['시장 대표', '배당 성장', '고배당', '커버드콜', '성장주', '섹터', '테마', '2X', '가상자산'];
+
+const sortCategories = (categories: string[]): string[] => {
+    return [...categories].sort((a, b) => {
+        const indexA = categoryOrder.indexOf(a);
+        const indexB = categoryOrder.indexOf(b);
+
+        if (indexA !== -1 && indexB !== -1) { // Both in order list
+            return indexA - indexB;
+        }
+        if (indexA !== -1) return -1; // Only A is in order list, so it comes first
+        if (indexB !== -1) return 1; // Only B is in order list, so it comes first
+
+        return a.localeCompare(b); // Neither in order list, sort alphabetically
+    });
 };
 
 
@@ -218,9 +239,9 @@ const App: React.FC = () => {
                 const defaultData = await getEtfData();
                 data = defaultData.data;
             }
-            const categories = [...new Set(Object.values(data).map(etf => etf.category))].sort();
+            const categories = [...new Set(Object.values(data).map(etf => etf.category))];
             setEtfData(data);
-            setEtfCategories(categories);
+            setEtfCategories(sortCategories(categories));
         } catch (error) {
             console.error("Error fetching or processing ETF data:", error);
             showAlert("데이터 로드 오류", `ETF 데이터를 가져오는 데 실패했습니다. 앱을 새로고침 해주세요.`);
@@ -246,21 +267,28 @@ const App: React.FC = () => {
         }
     };
     
-    const handleSelectPortfolio = (portfolio: PortfolioScenario, monthlyInvestment: number) => {
+    const handleSelectPortfolio = (result: SimulationResult) => {
+        const finalMonthlyDividend = result.dividendGrowth.length > 0 ? result.dividendGrowth[result.dividendGrowth.length - 1] : 0;
+    
         const initialAdjustments: { [ticker: string]: number } = {};
-        Object.keys(portfolio.weights).forEach(ticker => {
+        Object.keys(result.scenario.weights).forEach(ticker => {
             initialAdjustments[ticker] = 0;
         });
 
         const newTrackedPortfolio: PortfolioMonitorData = {
             id: `portfolio_${Date.now()}`,
-            portfolio,
+            portfolio: result.scenario,
             childName: '자녀 이름', // Default name
-            targetMonthlyInvestment: monthlyInvestment,
+            targetMonthlyInvestment: result.monthlyInvestment,
             currentTotalValue: 0,
             monthlyDividendReceived: 0,
             yearlyAdjustments: { [new Date().getFullYear()]: initialAdjustments },
-            ...getNewTrackingHistory(portfolio)
+            simulationProjection: {
+                periodYears: result.periodYears,
+                targetAssets: result.targetAssets,
+                finalMonthlyDividend: finalMonthlyDividend,
+            },
+            ...getNewTrackingHistory(result.scenario)
         };
         setTrackedPortfolios(prev => [...prev, newTrackedPortfolio]);
         setActiveTab('tracker');
@@ -287,7 +315,7 @@ const App: React.FC = () => {
     const handleSaveEtf = (etfToSave: Etf) => {
         const newEtfData = { ...etfData, [etfToSave.ticker]: etfToSave };
         setEtfData(newEtfData);
-        setEtfCategories([...new Set(Object.values(newEtfData).map(etf => etf.category))].sort());
+        setEtfCategories(sortCategories([...new Set(Object.values(newEtfData).map(etf => etf.category))]));
         localStorage.setItem('userEtfData', JSON.stringify(newEtfData));
         showAlert("저장 완료", `${etfToSave.ticker} ETF 정보가 저장되었습니다.`);
     };
@@ -299,7 +327,7 @@ const App: React.FC = () => {
             onConfirm: () => {
                 const { [tickerToDelete]: deleted, ...rest } = etfData;
                 setEtfData(rest);
-                setEtfCategories([...new Set(Object.values(rest).map(etf => etf.category))].sort());
+                setEtfCategories(sortCategories([...new Set(Object.values(rest).map(etf => etf.category))]));
                 localStorage.setItem('userEtfData', JSON.stringify(rest));
                 setConfirmInfo(null);
                 showAlert("삭제 완료", `${tickerToDelete} ETF가 삭제되었습니다.`);
@@ -319,7 +347,7 @@ const App: React.FC = () => {
                     localStorage.removeItem('userEtfData');
                     const { data, categories } = await getEtfData();
                     setEtfData(data);
-                    setEtfCategories(categories);
+                    setEtfCategories(sortCategories(categories));
                     showAlert("초기화 완료", "ETF 목록이 기본값으로 복원되었습니다.");
                 } catch (e) {
                     showAlert("오류", "초기화에 실패했습니다.");
@@ -443,7 +471,11 @@ const App: React.FC = () => {
                 showAlert("AI 포트폴리오 생성 오류", "AI 포트폴리오 생성에 실패했습니다. 기본 시나리오를 바탕으로 결과를 표시합니다.");
             }
 
-            Object.values(defaultScenarios).forEach(scenario => {
+            const scenariosToAdd = investmentTheme === '2x-growth' 
+                ? leveragedScenarios 
+                : defaultScenarios;
+
+            Object.values(scenariosToAdd).forEach(scenario => {
                 if (!scenariosToSimulate.some(s => s.id === scenario.id)) {
                     scenariosToSimulate.push(scenario);
                 }
@@ -464,8 +496,10 @@ const App: React.FC = () => {
             const sortedResults = results.sort((a, b) => {
                 if (aiPortfolio && a.scenario.id === aiPortfolio.id) return -1;
                 if (aiPortfolio && b.scenario.id === aiPortfolio.id) return 1;
-                if (a.scenario.id === riskProfile) return -1;
-                if (b.scenario.id === riskProfile) return 1;
+                if (investmentTheme !== '2x-growth') {
+                    if (a.scenario.id === riskProfile) return -1;
+                    if (b.scenario.id === riskProfile) return 1;
+                }
                 return b.targetAssets - a.targetAssets;
             });
 

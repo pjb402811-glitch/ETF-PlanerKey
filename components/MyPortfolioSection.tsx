@@ -13,6 +13,18 @@ const formatCurrency = (num: number, unit: '원' | '만원' = '원') => {
     return `${value.toLocaleString('ko-KR')}${unit}`;
 };
 
+const formatCurrencyShort = (num: number): string => {
+    const numAbs = Math.abs(num);
+    if (numAbs >= 100000000) {
+        const value = Math.round(num / 10000000) / 10;
+        return `${value.toLocaleString('ko-KR')}억원`;
+    }
+    if (numAbs >= 10000) {
+        return `${Math.round(num / 10000).toLocaleString('ko-KR')}만원`;
+    }
+    return `${Math.round(num).toLocaleString('ko-KR')}원`;
+};
+
 
 const AllocationBar: React.FC<{ target: number, actual: number }> = ({ target, actual }) => {
     const diff = Math.abs(target - actual);
@@ -228,6 +240,17 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
                 />
             </div>
             
+            {data.simulationProjection && (
+                <div className="bg-gray-900/50 p-4 rounded-lg mb-6 text-center border border-amber-500/50">
+                    <h4 className="font-semibold text-lg text-amber-400 mb-2">최초 시뮬레이션 목표</h4>
+                    <p className="text-lg md:text-xl text-white leading-relaxed">
+                        <span className="font-bold">{data.simulationProjection.periodYears}</span>년 후 (예상) 
+                        총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(data.simulationProjection.targetAssets)}</span>, 
+                        월배당금 <span className="font-bold text-indigo-400">{formatCurrencyShort(data.simulationProjection.finalMonthlyDividend)}</span>
+                    </p>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-gray-900/50 p-4 rounded-lg">
                      <div className="border-b border-gray-700 pb-4 mb-4">

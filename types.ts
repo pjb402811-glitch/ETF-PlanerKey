@@ -21,7 +21,8 @@ export type InvestmentTheme =
     | 'dividend-focused'
     | 'tech-focused'
     | 'crypto-focused'
-    | 'max-growth';
+    | 'max-growth'
+    | '2x-growth';
 
 export type SimulationGoal = 
     | { type: 'dividend'; value: number } // value in 10,000 KRW
@@ -54,6 +55,12 @@ export interface MonthlyEntry {
     investments: { [ticker: string]: number };
 }
 
+export interface SimulationProjection {
+    periodYears: number;
+    targetAssets: number;
+    finalMonthlyDividend: number;
+}
+
 export interface PortfolioMonitorData {
     id: string;
     portfolio: PortfolioScenario;
@@ -70,4 +77,5 @@ export interface PortfolioMonitorData {
     trackingHistory: {
         [year: number]: MonthlyEntry[];
     };
+    simulationProjection?: SimulationProjection;
 }

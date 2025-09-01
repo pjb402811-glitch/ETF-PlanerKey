@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import type { SimulationResult, PortfolioScenario } from '../types';
+import type { SimulationResult } from '../types';
 import ChartComponent from './Chart';
 
 const formatCurrency = (num: number) => `${Math.round(num).toLocaleString('ko-KR')}원`;
@@ -21,7 +21,7 @@ interface ResultCardProps {
     result: SimulationResult;
     index: number;
     isPrimary: boolean;
-    onSelectPortfolio: (portfolio: PortfolioScenario, monthlyInvestment: number) => void;
+    onSelectPortfolio: (result: SimulationResult) => void;
 }
 
 const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSelectPortfolio }) => {
@@ -97,7 +97,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSel
             )}
             <div className="mt-6 text-center">
                 <button 
-                    onClick={() => onSelectPortfolio(result.scenario, result.monthlyInvestment)}
+                    onClick={() => onSelectPortfolio(result)}
                     className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105 shadow-md"
                 >
                     이 포트폴리오 관리 시작
@@ -111,7 +111,7 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSel
 interface ResultsSectionProps {
     results: SimulationResult[];
     inputs: { currentAge: number; investmentPeriod: number };
-    onSelectPortfolio: (portfolio: PortfolioScenario, monthlyInvestment: number) => void;
+    onSelectPortfolio: (result: SimulationResult) => void;
     onReset: () => void;
 }
 

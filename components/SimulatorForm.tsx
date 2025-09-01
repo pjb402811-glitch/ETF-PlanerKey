@@ -24,9 +24,9 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
     const [targetDividend, setTargetDividend] = useState('300');
     const [targetAsset, setTargetAsset] = useState('10'); // 10억
     const [monthlyInvestment, setMonthlyInvestment] = useState('100');
-    const [currentAge, setCurrentAge] = useState('5');
-    const [investmentPeriod, setInvestmentPeriod] = useState('20');
-    const [inflationRate, setInflationRate] = useState('2.5');
+    const [currentAge, setCurrentAge] = useState('0');
+    const [investmentPeriod, setInvestmentPeriod] = useState('0');
+    const [inflationRate, setInflationRate] = useState('3');
     const [riskProfile, setRiskProfile] = useState<RiskProfile>('balanced');
     const [investmentTheme, setInvestmentTheme] = useState<InvestmentTheme>('ai-recommended');
     
@@ -37,7 +37,7 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
     useEffect(() => {
         setIsRiskProfileDisabled(investmentTheme !== 'ai-recommended');
 
-        const dividendDisabled = investmentTheme === 'max-growth' || investmentTheme === 'crypto-focused';
+        const dividendDisabled = ['max-growth', 'crypto-focused', '2x-growth'].includes(investmentTheme);
         const assetDisabled = investmentTheme === 'dividend-focused';
         
         setIsDividendGoalDisabled(dividendDisabled);
@@ -76,8 +76,8 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
         const investmentPeriodVal = parseInt(investmentPeriod) || 0;
         const inflationRateVal = parseFloat(inflationRate) || 0;
 
-        if (goal.value <= 0 || currentAgeVal <= 0 || investmentPeriodVal <= 0) {
-            alert("입력값을 확인해주세요. 목표 또는 투자 금액, 나이, 기간은 0보다 커야 합니다.");
+        if (goal.value <= 0 || investmentPeriodVal <= 0) {
+            alert("입력값을 확인해주세요. 목표 또는 투자 금액, 기간은 0보다 커야 합니다.");
             return;
         }
         
@@ -97,6 +97,7 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
                             <option value="tech-focused">미래 기술 집중 (성장형)</option>
                             <option value="dividend-focused">안정 고배당 집중 (배당형)</option>
                             <option value="crypto-focused">가상자산 집중 (초고위험 성장형)</option>
+                            <option value="2x-growth">2X 레버리지 성장 (초고위험)</option>
                         </select>
                     </div>
                      <div style={{ opacity: isRiskProfileDisabled ? 0.5 : 1 }}>
