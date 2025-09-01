@@ -22,9 +22,10 @@ interface ResultCardProps {
     index: number;
     isPrimary: boolean;
     onSelectPortfolio: (result: SimulationResult) => void;
+    showAlert: (title: string, message: string) => void;
 }
 
-const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSelectPortfolio }) => {
+const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSelectPortfolio, showAlert }) => {
     const riskColorClass = result.scenario.risk === '낮음' ? 'bg-green-500/20 text-green-400' :
                            result.scenario.risk === '중립' ? 'bg-yellow-500/20 text-yellow-400' :
                            'bg-red-500/20 text-red-400';
@@ -32,6 +33,34 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSel
     const yearlyAssetData = result.assetGrowth.filter((_, i) => i % 12 === 0);
     const yearlyDividendData = result.dividendGrowth.filter((_, i) => i % 12 === 0);
     const finalMonthlyDividend = result.dividendGrowth[result.dividendGrowth.length - 1];
+
+    const handleCopySummary = async () => {
+        const portfolioComposition = Object.entries(result.scenario.weights)
+            .map(([ticker, weight]) => `- ${ticker}: ${(weight * 100).toFixed(1)}%`)
+            .join('\n');
+
+        const summaryText = `*자녀부자플랜 시뮬레이션 결과*
+
+■ 제목: ${result.scenario.name}
+
+■ 포트폴리오 구성 (월 ${formatCurrency(result.monthlyInvestment)} 투자)
+${portfolioComposition}
+
+■ ${result.periodYears}년 후 예상 결과
+- 예상 총자산: ${formatCurrency(result.targetAssets)} (현재 가치: ${formatCurrency(result.inflationAdjustedTargetAssets)})
+- 예상 월 배당금 (세후): ${formatCurrency(finalMonthlyDividend)} (현재 가치: ${formatCurrency(result.inflationAdjustedMonthlyDividend)})
+
+*본 내용은 AI 시뮬레이션 결과이며, 미래 수익을 보장하지 않습니다.*`.trim();
+
+        try {
+            await navigator.clipboard.writeText(summaryText);
+            showAlert('요약 복사 완료', '시뮬레이션 결과 요약이 클립보드에 복사되었습니다.');
+        } catch (err) {
+            console.error('Failed to copy summary: ', err);
+            showAlert('복사 실패', '결과 요약을 클립보드에 복사하는데 실패했습니다.');
+        }
+    };
+
 
     return (
         <div 
@@ -95,12 +124,22 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSel
                     </div>
                 </div>
             )}
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center flex justify-center items-center gap-4 flex-wrap">
                 <button 
                     onClick={() => onSelectPortfolio(result)}
                     className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105 shadow-md"
                 >
                     이 포트폴리오 관리 시작
+                </button>
+                <button
+                    onClick={handleCopySummary}
+                    className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full transition-transform transform hover:scale-105 shadow-md flex items-center gap-2"
+                    aria-label="결과 요약 복사"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>요약 복사</span>
                 </button>
             </div>
         </div>
@@ -113,9 +152,10 @@ interface ResultsSectionProps {
     inputs: { currentAge: number; investmentPeriod: number };
     onSelectPortfolio: (result: SimulationResult) => void;
     onReset: () => void;
+    showAlert: (title: string, message: string) => void;
 }
 
-const ResultsSection: React.FC<ResultsSectionProps> = ({ results, inputs, onSelectPortfolio, onReset }) => {
+const ResultsSection: React.FC<ResultsSectionProps> = ({ results, inputs, onSelectPortfolio, onReset, showAlert }) => {
     const resultsRef = React.useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -155,6 +195,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({ results, inputs, onSele
                         index={index} 
                         isPrimary={index === 0} 
                         onSelectPortfolio={onSelectPortfolio}
+                        showAlert={showAlert}
                     />
                 ))}
             </div>

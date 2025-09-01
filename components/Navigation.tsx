@@ -3,10 +3,9 @@ import React from 'react';
 interface NavigationProps {
     activeTab: 'simulator' | 'tracker';
     setActiveTab: (tab: 'simulator' | 'tracker') => void;
-    isTrackerActive: boolean;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isTrackerActive }) => {
+const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
     return (
         <nav className="flex justify-center mb-8">
             <div className="bg-gray-800 p-2 rounded-full flex space-x-2">
@@ -19,12 +18,11 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isTrac
                     시뮬레이터
                 </button>
                 <button
-                    onClick={() => { if (isTrackerActive) setActiveTab('tracker'); }}
-                    disabled={!isTrackerActive}
+                    onClick={() => setActiveTab('tracker')}
                     className={`px-7 py-2.5 rounded-full text-base font-semibold transition-colors duration-200 ${
                         activeTab === 'tracker' ? 'bg-amber-600 text-white' : 'text-gray-300 hover:bg-gray-700'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    aria-label="포트폴리오 관리 (포트폴리오 선택 후 활성화)"
+                    }`}
+                    aria-label="포트폴리오 관리"
                 >
                     포트폴리오 관리
                 </button>

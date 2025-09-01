@@ -59,6 +59,7 @@ export interface SimulationProjection {
     periodYears: number;
     targetAssets: number;
     finalMonthlyDividend: number;
+    startAge?: number;
 }
 
 export interface PortfolioMonitorData {

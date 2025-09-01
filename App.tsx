@@ -166,7 +166,7 @@ const App: React.FC = () => {
     const [loadingMessage, setLoadingMessage] = useState('ETF 데이터 가져오는 중...');
     
     const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
-    const [confirmInfo, setConfirmInfo] = useState<{ title: string; message: string; onConfirm: () => void; } | null>(null);
+    const [confirmInfo, setConfirmInfo] = useState<{ title: string; message: string; onConfirm: () => void; confirmText?: string; } | null>(null);
     const [simulationResults, setSimulationResults] = useState<SimulationResult[] | null>(null);
     const [simulationInputs, setSimulationInputs] = useState<{currentAge: number, investmentPeriod: number} | null>(null);
 
@@ -287,6 +287,7 @@ const App: React.FC = () => {
                 periodYears: result.periodYears,
                 targetAssets: result.targetAssets,
                 finalMonthlyDividend: finalMonthlyDividend,
+                startAge: simulationInputs?.currentAge,
             },
             ...getNewTrackingHistory(result.scenario)
         };
@@ -299,10 +300,38 @@ const App: React.FC = () => {
         setTrackedPortfolios(prev => prev.map(p => (p.id === updatedData.id ? updatedData : p)));
     };
 
+    const handleClonePortfolio = (portfolioId: string) => {
+        const portfolioToClone = trackedPortfolios.find(p => p.id === portfolioId);
+        if (portfolioToClone) {
+            const clonedPortfolio = JSON.parse(JSON.stringify(portfolioToClone));
+            clonedPortfolio.id = `portfolio_${Date.now()}`;
+            clonedPortfolio.childName = `${clonedPortfolio.childName} (복제)`;
+            setTrackedPortfolios(prev => [...prev, clonedPortfolio]);
+            showAlert("복제 완료", `'${portfolioToClone.childName}' 포트폴리오가 복제되었습니다.`);
+        }
+    };
+
+    const handleDeletePortfolio = (portfolioId: string) => {
+        const portfolioToDelete = trackedPortfolios.find(p => p.id === portfolioId);
+        if (portfolioToDelete) {
+            setConfirmInfo({
+                title: "포트폴리오 삭제 확인",
+                message: `정말로 '${portfolioToDelete.childName}' 포트폴리오를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`,
+                confirmText: "삭제",
+                onConfirm: () => {
+                    setTrackedPortfolios(prev => prev.filter(p => p.id !== portfolioId));
+                    setConfirmInfo(null);
+                    showAlert("삭제 완료", `'${portfolioToDelete.childName}' 포트폴리오가 삭제되었습니다.`);
+                }
+            });
+        }
+    };
+
     const handleResetAllPortfolios = () => {
         setConfirmInfo({
             title: "데이터 초기화 확인",
             message: "정말로 모든 포트폴리오 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
+            confirmText: "초기화",
             onConfirm: () => {
                 setTrackedPortfolios([]);
                 setActiveTab('simulator');
@@ -324,6 +353,7 @@ const App: React.FC = () => {
         setConfirmInfo({
             title: "ETF 삭제 확인",
             message: `정말로 '${tickerToDelete}' ETF를 목록에서 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`,
+            confirmText: "삭제",
             onConfirm: () => {
                 const { [tickerToDelete]: deleted, ...rest } = etfData;
                 setEtfData(rest);
@@ -339,6 +369,7 @@ const App: React.FC = () => {
         setConfirmInfo({
             title: "ETF 목록 초기화",
             message: "정말로 ETF 목록을 기본값으로 초기화하시겠습니까?\n모든 직접 추가/수정한 내용이 사라집니다.",
+            confirmText: "초기화",
             onConfirm: async () => {
                 setConfirmInfo(null);
                 setIsLoading(true);
@@ -356,6 +387,74 @@ const App: React.FC = () => {
                 }
             }
         });
+    };
+    
+    const handleExportData = () => {
+        if (trackedPortfolios.length === 0) {
+            showAlert("내보내기 실패", "내보낼 포트폴리오 데이터가 없습니다.");
+            return;
+        }
+        try {
+            const dataStr = JSON.stringify(trackedPortfolios, null, 2);
+            const dataBlob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            const date = new Date().toISOString().slice(0, 10);
+            link.href = url;
+            link.download = `janyebuja-plan_backup_${date}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showAlert("내보내기 완료", "포트폴리오 데이터가 파일로 저장되었습니다.");
+        } catch (error) {
+            console.error("Failed to export data", error);
+            showAlert("내보내기 오류", "데이터를 내보내는 중 오류가 발생했습니다.");
+        }
+    };
+
+    const handleImportData = (file: File) => {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const content = event.target?.result;
+            if (typeof content !== 'string') {
+                showAlert("가져오기 오류", "파일을 읽을 수 없습니다.");
+                return;
+            }
+
+            setConfirmInfo({
+                title: "데이터 가져오기 확인",
+                message: "데이터를 가져오면 현재 모든 포트폴리오가 덮어쓰여집니다.\n계속하시겠습니까?",
+                confirmText: "가져오기",
+                onConfirm: () => {
+                    setConfirmInfo(null);
+                    try {
+                        const parsedData = JSON.parse(content);
+                        if (!Array.isArray(parsedData)) {
+                            throw new Error("Invalid data format: not an array.");
+                        }
+
+                        const newPortfolios: PortfolioMonitorData[] = [];
+                        parsedData.forEach(p => {
+                            newPortfolios.push(migratePortfolioData(p));
+                        });
+                        
+                        setTrackedPortfolios(newPortfolios);
+                        showAlert("가져오기 완료", `${newPortfolios.length}개의 포트폴리오를 성공적으로 가져왔습니다.`);
+
+                    } catch (error) {
+                        console.error("Failed to import data", error);
+                        showAlert("가져오기 실패", `유효하지 않은 파일입니다. 오류: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                    }
+                },
+            });
+        };
+        reader.onerror = () => {
+             showAlert("가져오기 오류", "파일을 읽는 중 오류가 발생했습니다.");
+        };
+        reader.readAsText(file);
     };
 
     const calculatePortfolio = (
@@ -536,7 +635,7 @@ const App: React.FC = () => {
                 message={confirmInfo?.message ?? ''}
                 onConfirm={() => confirmInfo?.onConfirm()}
                 onClose={() => setConfirmInfo(null)}
-                confirmText="삭제"
+                confirmText={confirmInfo?.confirmText}
             />
             <ApiKeyModal
                 isOpen={isApiKeyModalOpen}
@@ -548,7 +647,6 @@ const App: React.FC = () => {
                 <Navigation 
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}
-                    isTrackerActive={trackedPortfolios.length > 0}
                 />
 
                 {activeTab === 'simulator' && (
@@ -562,7 +660,7 @@ const App: React.FC = () => {
                             onResetEtfs={handleResetEtfs}
                         />
                         <SimulatorForm onSubmit={handleSimulation} />
-                        {simulationResults && simulationInputs && <ResultsSection results={simulationResults} inputs={simulationInputs} onSelectPortfolio={handleSelectPortfolio} onReset={handleResetSimulation} />}
+                        {simulationResults && simulationInputs && <ResultsSection results={simulationResults} inputs={simulationInputs} onSelectPortfolio={handleSelectPortfolio} onReset={handleResetSimulation} showAlert={showAlert} />}
                     </>
                 )}
                 
@@ -571,7 +669,11 @@ const App: React.FC = () => {
                         portfolios={trackedPortfolios}
                         etfData={etfData}
                         onUpdate={handleUpdatePortfolio}
+                        onClone={handleClonePortfolio}
+                        onDelete={handleDeletePortfolio}
                         onResetAll={handleResetAllPortfolios}
+                        onExport={handleExportData}
+                        onImport={handleImportData}
                     />
                 )}
 

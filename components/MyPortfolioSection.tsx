@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import type { PortfolioMonitorData, MonthlyEntry, Etf } from '../types';
 
 const formatNumber = (value: number | string): string => {
@@ -227,6 +227,9 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
     const totalWeightSum = isEditing ? Object.values(data.portfolio.weights).reduce((sum, w) => sum + w, 0) * 100 : 0;
     const totalWeightColor = Math.abs(totalWeightSum - 100) < 0.1 ? 'text-green-400' : 'text-red-400';
     
+    const projection = data.simulationProjection;
+    const hasStartAge = projection && projection.startAge !== undefined && projection.startAge !== null;
+
     return (
         <div className="p-4 md:p-6 border-t border-gray-700">
              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -240,14 +243,20 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
                 />
             </div>
             
-            {data.simulationProjection && (
+            {projection && (
                 <div className="bg-gray-900/50 p-4 rounded-lg mb-6 text-center border border-amber-500/50">
                     <h4 className="font-semibold text-lg text-amber-400 mb-2">최초 시뮬레이션 목표</h4>
-                    <p className="text-lg md:text-xl text-white leading-relaxed">
-                        <span className="font-bold">{data.simulationProjection.periodYears}</span>년 후 (예상) 
-                        총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(data.simulationProjection.targetAssets)}</span>, 
-                        월배당금 <span className="font-bold text-indigo-400">{formatCurrencyShort(data.simulationProjection.finalMonthlyDividend)}</span>
-                    </p>
+                    {hasStartAge ? (
+                        <p className="text-lg md:text-xl text-white leading-relaxed">
+                            <span className="font-bold">{data.childName}</span>님(<span className="font-bold">{projection.startAge}</span>세)은 매월 <span className="font-bold text-green-400">{formatCurrency(data.targetMonthlyInvestment, '만원')}</span> 투자시, <span className="font-bold">{projection.startAge! + projection.periodYears}</span>세에 (예상) 총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(projection.targetAssets)}</span>, 월배당금 <span className="font-bold text-indigo-400">{formatCurrencyShort(projection.finalMonthlyDividend)}</span> 기대
+                        </p>
+                    ) : (
+                        <p className="text-lg md:text-xl text-white leading-relaxed">
+                            <span className="font-bold">{projection.periodYears}</span>년 후 (예상) 
+                            총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(projection.targetAssets)}</span>, 
+                            월배당금 <span className="font-bold text-indigo-400">{formatCurrencyShort(projection.finalMonthlyDividend)}</span>
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -432,13 +441,18 @@ interface MyPortfolioSectionProps {
     portfolios: PortfolioMonitorData[];
     etfData: Record<string, Etf>;
     onUpdate: (data: PortfolioMonitorData) => void;
+    onClone: (portfolioId: string) => void;
+    onDelete: (portfolioId: string) => void;
     onResetAll: () => void;
+    onExport: () => void;
+    onImport: (file: File) => void;
 }
 
-const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etfData, onUpdate, onResetAll }) => {
+const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etfData, onUpdate, onClone, onDelete, onResetAll, onExport, onImport }) => {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingData, setEditingData] = useState<PortfolioMonitorData | null>(null);
+    const importInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (expandedId && !portfolios.some(p => p.id === expandedId)) {
@@ -473,26 +487,60 @@ const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etf
             setEditingData(null);
         }
     };
+    
+    const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            onImport(file);
+        }
+        if (importInputRef.current) {
+            importInputRef.current.value = '';
+        }
+    };
 
     return (
         <section className="fade-in">
             <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
                 <h2 className="text-2xl font-semibold text-amber-400">📊 내 포트폴리오 관리</h2>
-                {portfolios.length > 0 && (
-                    <button
-                        onClick={onResetAll}
-                        className="bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors"
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <input
+                        type="file"
+                        ref={importInputRef}
+                        onChange={handleFileImport}
+                        accept=".json"
+                        className="hidden"
+                        id="import-file-input"
+                    />
+                    <label
+                        htmlFor="import-file-input"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors cursor-pointer"
                     >
-                        전체 초기화
-                    </button>
-                )}
+                        데이터 가져오기
+                    </label>
+                    {portfolios.length > 0 && (
+                        <>
+                            <button
+                                onClick={onExport}
+                                className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors"
+                            >
+                                데이터 내보내기
+                            </button>
+                            <button
+                                onClick={onResetAll}
+                                className="bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors"
+                            >
+                                전체 초기화
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
             <div className="space-y-4">
                 {portfolios.length === 0 ? (
                     <div className="bg-gray-800 p-6 rounded-2xl shadow-lg text-center fade-in border-2 border-dashed border-gray-600">
                         <p className="text-gray-400">관리 중인 포트폴리오가 없습니다.</p>
-                        <p className="text-sm text-gray-500 mt-2">시뮬레이터를 실행하여 포트폴리오를 추가하세요.</p>
+                        <p className="text-sm text-gray-500 mt-2">시뮬레이터를 실행하여 포트폴리오를 추가하거나, '데이터 가져오기'로 기존 데이터를 불러올 수 있습니다.</p>
                     </div>
                 ) : (
                     portfolios.map((p) => {
@@ -518,7 +566,9 @@ const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etf
                                         </>
                                     ) : (
                                         <>
+                                            <button onClick={(e) => { e.stopPropagation(); onClone(p.id); }} className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">복제</button>
                                             <button onClick={(e) => { e.stopPropagation(); handleEditClick(p); }} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">수정</button>
+                                            <button onClick={(e) => { e.stopPropagation(); onDelete(p.id); }} className="bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">삭제</button>
                                         </>
                                     )}
                                     <div className="p-1 rounded-full">
