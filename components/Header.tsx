@@ -18,7 +18,7 @@ const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
                 자녀부자플랜
             </h1>
             <p className="text-xl text-blue-300">{currentDate}</p>
-            <p className="text-lg text-blue-400 mt-1">자녀에게 건강한 금융투자를 물려주길 바라며-Made by PJB</p>
+            <p className="text-lg text-blue-400 mt-1">자녀에게 건강한 금융투자 유산을 바라며-Made by PJB</p>
             <button
                 onClick={onSettingsClick}
                 className="absolute top-0 right-0 p-2 text-gray-400 hover:text-white transition-colors"
