@@ -12,7 +12,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isTrac
             <div className="bg-gray-800 p-2 rounded-full flex space-x-2">
                 <button
                     onClick={() => setActiveTab('simulator')}
-                    className={`px-8 py-3 rounded-full text-base font-semibold transition-colors duration-200 ${
+                    className={`px-7 py-2.5 rounded-full text-base font-semibold transition-colors duration-200 ${
                         activeTab === 'simulator' ? 'bg-green-600 text-white' : 'text-gray-300 hover:bg-gray-700'
                     }`}
                 >
@@ -21,7 +21,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, isTrac
                 <button
                     onClick={() => { if (isTrackerActive) setActiveTab('tracker'); }}
                     disabled={!isTrackerActive}
-                    className={`px-8 py-3 rounded-full text-base font-semibold transition-colors duration-200 ${
+                    className={`px-7 py-2.5 rounded-full text-base font-semibold transition-colors duration-200 ${
                         activeTab === 'tracker' ? 'bg-amber-600 text-white' : 'text-gray-300 hover:bg-gray-700'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                     aria-label="포트폴리오 관리 (포트폴리오 선택 후 활성화)"
