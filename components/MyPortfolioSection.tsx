@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import type { PortfolioMonitorData, MonthlyEntry, Etf } from '../types';
+import PurchaseCalculator from './PurchaseCalculator';
 
 const formatNumber = (value: number | string): string => {
     if (value === '' || value === null || value === undefined) return '';
@@ -248,13 +249,13 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
                     <h4 className="font-semibold text-lg text-amber-400 mb-2">최초 시뮬레이션 목표</h4>
                     {hasStartAge ? (
                         <p className="text-lg md:text-xl text-white leading-relaxed">
-                            <span className="font-bold">{data.childName}</span>님(<span className="font-bold">{projection.startAge}</span>세)은 매월 <span className="font-bold text-green-400">{formatCurrency(data.targetMonthlyInvestment, '만원')}</span> 투자시, <span className="font-bold">{projection.startAge! + projection.periodYears}</span>세에 (예상) 총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(projection.targetAssets)}</span>, 월배당금 <span className="font-bold text-indigo-400">{formatCurrencyShort(projection.finalMonthlyDividend)}</span> 기대
+                            <span className="font-bold">{data.childName}</span>님(<span className="font-bold">{projection.startAge}</span>세)은 매월 <span className="font-bold text-green-400">{formatCurrency(data.targetMonthlyInvestment, '만원')}</span> 투자시, <span className="font-bold">{projection.startAge! + projection.periodYears}</span>세에<br/>(예상) 총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(projection.targetAssets)}</span> <span className="text-base text-gray-400">(현재 가치: {formatCurrencyShort(projection.inflationAdjustedTargetAssets)})</span>,<br/>월배당금 <span className="font-bold text-indigo-400">{formatCurrencyShort(projection.finalMonthlyDividend)}</span> <span className="text-base text-gray-400">(현재 가치: {formatCurrencyShort(projection.inflationAdjustedMonthlyDividend)})</span> 기대
                         </p>
                     ) : (
                         <p className="text-lg md:text-xl text-white leading-relaxed">
-                            <span className="font-bold">{projection.periodYears}</span>년 후 (예상) 
-                            총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(projection.targetAssets)}</span>, 
-                            월배당금 <span className="font-bold text-indigo-400">{formatCurrencyShort(projection.finalMonthlyDividend)}</span>
+                            <span className="font-bold">{projection.periodYears}</span>년 후 (예상)<br/>
+                            총자산 <span className="font-bold text-cyan-400">{formatCurrencyShort(projection.targetAssets)}</span> <span className="text-base text-gray-400">(현재 가치: {formatCurrencyShort(projection.inflationAdjustedTargetAssets)})</span>, <br/>
+                            월배당금 <span className="font-bold text-indigo-400">{formatCurrencyShort(projection.finalMonthlyDividend)}</span> <span className="text-base text-gray-400">(현재 가치: {formatCurrencyShort(projection.inflationAdjustedMonthlyDividend)})</span>
                         </p>
                     )}
                 </div>
@@ -453,6 +454,7 @@ const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etf
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingData, setEditingData] = useState<PortfolioMonitorData | null>(null);
     const importInputRef = useRef<HTMLInputElement>(null);
+    const [activeSubTab, setActiveSubTab] = useState<'management' | 'calculator'>('management');
 
     useEffect(() => {
         if (expandedId && !portfolios.some(p => p.id === expandedId)) {
@@ -501,7 +503,7 @@ const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etf
     return (
         <section className="fade-in">
             <div className="flex justify-between items-center flex-wrap gap-4 mb-4">
-                <h2 className="text-2xl font-semibold text-amber-400">📊 내 포트폴리오 관리</h2>
+                <h2 className="text-2xl font-semibold text-amber-400">📊 내 포트폴리오</h2>
                 <div className="flex items-center gap-2 flex-wrap justify-end">
                     <input
                         type="file"
@@ -536,60 +538,89 @@ const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etf
                 </div>
             </div>
 
-            <div className="space-y-4">
-                {portfolios.length === 0 ? (
-                    <div className="bg-gray-800 p-6 rounded-2xl shadow-lg text-center fade-in border-2 border-dashed border-gray-600">
-                        <p className="text-gray-400">관리 중인 포트폴리오가 없습니다.</p>
-                        <p className="text-sm text-gray-500 mt-2">시뮬레이터를 실행하여 포트폴리오를 추가하거나, '데이터 가져오기'로 기존 데이터를 불러올 수 있습니다.</p>
-                    </div>
-                ) : (
-                    portfolios.map((p) => {
-                        const isExpanded = expandedId === p.id;
-                        const isEditing = editingId === p.id;
+            <div className="flex border-b border-gray-700 mb-6">
+                <button
+                    onClick={() => setActiveSubTab('management')}
+                    className={`px-4 py-2 -mb-px text-base font-semibold transition-colors duration-200 ${
+                        activeSubTab === 'management'
+                            ? 'text-amber-400 border-b-2 border-amber-400'
+                            : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                    포트폴리오 관리
+                </button>
+                <button
+                    onClick={() => setActiveSubTab('calculator')}
+                    className={`px-4 py-2 -mb-px text-base font-semibold transition-colors duration-200 ${
+                        activeSubTab === 'calculator'
+                            ? 'text-amber-400 border-b-2 border-amber-400'
+                            : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                    매수수량 계산기
+                </button>
+            </div>
 
-                        return (
-                        <div key={p.id} className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
-                            <div 
-                                className="p-4 flex justify-between items-center hover:bg-gray-700/50 transition-colors cursor-pointer"
-                                onClick={() => !isEditing && setExpandedId(isExpanded ? null : p.id)}
-                            >
-                                <div className="flex-grow">
-                                    <span className="font-bold text-lg text-amber-400">{isEditing ? editingData?.childName : p.childName}</span>
-                                    <span className="text-gray-400 mx-2">-</span>
-                                    <span className="text-white">{p.portfolio.name}</span>
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                                    {isEditing ? (
-                                        <>
-                                            <button onClick={(e) => { e.stopPropagation(); handleSaveClick(); }} className="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">저장</button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleCancelClick(); }} className="bg-gray-600 hover:bg-gray-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">취소</button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button onClick={(e) => { e.stopPropagation(); onClone(p.id); }} className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">복제</button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleEditClick(p); }} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">수정</button>
-                                            <button onClick={(e) => { e.stopPropagation(); onDelete(p.id); }} className="bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">삭제</button>
-                                        </>
-                                    )}
-                                    <div className="p-1 rounded-full">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
+            {activeSubTab === 'management' && (
+                <div className="space-y-4">
+                    {portfolios.length === 0 ? (
+                        <div className="bg-gray-800 p-6 rounded-2xl shadow-lg text-center fade-in border-2 border-dashed border-gray-600">
+                            <p className="text-gray-400">관리 중인 포트폴리오가 없습니다.</p>
+                            <p className="text-sm text-gray-500 mt-2">시뮬레이터를 실행하여 포트폴리오를 추가하거나, '데이터 가져오기'로 기존 데이터를 불러올 수 있습니다.</p>
+                        </div>
+                    ) : (
+                        portfolios.map((p) => {
+                            const isExpanded = expandedId === p.id;
+                            const isEditing = editingId === p.id;
+
+                            return (
+                            <div key={p.id} className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+                                <div 
+                                    className="p-4 flex justify-between items-center hover:bg-gray-700/50 transition-colors cursor-pointer"
+                                    onClick={() => !isEditing && setExpandedId(isExpanded ? null : p.id)}
+                                >
+                                    <div className="flex-grow">
+                                        <span className="font-bold text-lg text-amber-400">{isEditing ? editingData?.childName : p.childName}</span>
+                                        <span className="text-gray-400 mx-2">-</span>
+                                        <span className="text-white">{p.portfolio.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                                        {isEditing ? (
+                                            <>
+                                                <button onClick={(e) => { e.stopPropagation(); handleSaveClick(); }} className="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">저장</button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleCancelClick(); }} className="bg-gray-600 hover:bg-gray-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">취소</button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button onClick={(e) => { e.stopPropagation(); onClone(p.id); }} className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">복제</button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleEditClick(p); }} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">수정</button>
+                                                <button onClick={(e) => { e.stopPropagation(); onDelete(p.id); }} className="bg-red-600 hover:bg-red-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">삭제</button>
+                                            </>
+                                        )}
+                                        <div className="p-1 rounded-full">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
                                     </div>
                                 </div>
+                                {isExpanded && (
+                                    <PortfolioTrackerDetail
+                                        data={isEditing && editingData ? editingData : p}
+                                        etfData={etfData}
+                                        isEditing={isEditing}
+                                        onChange={setEditingData}
+                                    />
+                                )}
                             </div>
-                            {isExpanded && (
-                                <PortfolioTrackerDetail
-                                    data={isEditing && editingData ? editingData : p}
-                                    etfData={etfData}
-                                    isEditing={isEditing}
-                                    onChange={setEditingData}
-                                />
-                            )}
-                        </div>
-                    )})
-                )}
-            </div>
+                        )})
+                    )}
+                </div>
+            )}
+
+            {activeSubTab === 'calculator' && (
+                <PurchaseCalculator portfolios={portfolios} />
+            )}
         </section>
     );
 };

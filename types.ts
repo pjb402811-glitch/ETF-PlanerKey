@@ -59,6 +59,8 @@ export interface SimulationProjection {
     periodYears: number;
     targetAssets: number;
     finalMonthlyDividend: number;
+    inflationAdjustedTargetAssets: number;
+    inflationAdjustedMonthlyDividend: number;
     startAge?: number;
 }
 

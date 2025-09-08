@@ -117,6 +117,15 @@ const migratePortfolioData = (p: any): PortfolioMonitorData => {
         simulationProjection: p.simulationProjection, // Keep existing projection data
     };
 
+    if (migrated.simulationProjection) {
+        if (migrated.simulationProjection.inflationAdjustedTargetAssets === undefined) {
+            migrated.simulationProjection.inflationAdjustedTargetAssets = migrated.simulationProjection.targetAssets;
+        }
+        if (migrated.simulationProjection.inflationAdjustedMonthlyDividend === undefined) {
+            migrated.simulationProjection.inflationAdjustedMonthlyDividend = migrated.simulationProjection.finalMonthlyDividend;
+        }
+    }
+
     if (migrated.trackingHistory) {
         const tickers = Object.keys(migrated.portfolio.weights);
         for (const year in migrated.trackingHistory) {
@@ -287,6 +296,8 @@ const App: React.FC = () => {
                 periodYears: result.periodYears,
                 targetAssets: result.targetAssets,
                 finalMonthlyDividend: finalMonthlyDividend,
+                inflationAdjustedTargetAssets: result.inflationAdjustedTargetAssets,
+                inflationAdjustedMonthlyDividend: result.inflationAdjustedMonthlyDividend,
                 startAge: simulationInputs?.currentAge,
             },
             ...getNewTrackingHistory(result.scenario)
