@@ -12,7 +12,7 @@ const investmentThemeMap: Record<InvestmentTheme, string> = {
     'max-growth': '100% 성장 집중 (배당 최소화)',
     'tech-focused': '미래 기술 집중',
     'dividend-focused': '안정 고배당 집중',
-    'crypto-focused': '가상자산 집중',
+    'crypto-focused': '디지털자산 집중',
     '2x-growth': '2X 레버리지 성장',
 };
 
@@ -109,12 +109,11 @@ export const generateAiPortfolio = async (
 
     **Crucial Instructions:**
     1.  **Portfolio Naming and Description:** This is a critical step. The name and description must be insightful and accurately reflect the portfolio's strategy.
-        - For high-risk themes like '2X 레버리지 성장' or '가상자산 집중', the name and description MUST acknowledge the high-risk, high-return nature. AVOID using words like '균형' (balanced) or '안정' (stable). Instead, use more appropriate and descriptive phrases like '높은 변동성을 견디는' (withstanding high volatility) or '초고수익 추구형' (ultra-high-return seeking). A user provided an excellent example name: "높은 변동성을 견디는 2X레버리지 성장포트폴리오". Use this as inspiration for your creativity.
-        - For other themes, the name should be creative and reflect the portfolio's core strategy (e.g., 'AI 기술주도 성장 포트폴리오').
+        - For high-risk themes like '2X 레버리지 성장' or '디지털자산 집중', the name and description MUST acknowledge the high-risk, high-return nature. AVOID using words like '균형' (balanced) or '안정' (stable). Instead, use more appropriate and descriptive phrases like '높은 변동성을 견디는' (withstanding high volatility) or '초고수익 추구형' (ultra-high-return seeking). A user provided an excellent example name: "높은 변동성을 견디는 2X레버리지 성장포트폴리오". Use this as inspiration for your creativity.
     2.  **Adhere to Theme & Profile:** Your portfolio MUST strictly reflect both the user's risk profile AND their chosen theme. 
         - For a theme like '100% 성장 집중 (배당 최소화)', prioritize ETFs with the highest 'growth' values and lowest 'yield', as the goal is maximum capital appreciation. The portfolio name and description should reflect this growth focus.
         - For '안정 고배당 집중', prioritize high 'yield' and '낮음' or '중립' risk ETFs.
-        - For '가상자산 집중', you must primarily use ETFs from the '가상자산' category.
+        - For '디지털자산 집중', you must primarily use ETFs from the '디지털 자산' category.
         - For '2X 레버리지 성장', you must primarily use ETFs from the '2X' category.
         - For 'AI 추천 종합', you have the creative freedom to combine various categories to create a balanced portfolio according to the risk profile.
     3.  **Be Creative & Diverse:** Do not just pick the most obvious ETFs. Create an innovative portfolio. For example, a 'balanced' profile with a 'tech-focused' theme might include some slightly lower-risk tech ETFs or a small allocation to a dividend-paying tech stock ETF if available.

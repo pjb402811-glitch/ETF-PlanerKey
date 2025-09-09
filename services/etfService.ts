@@ -32,14 +32,14 @@ const allEtfData: Record<string, Omit<Etf, 'ticker' | 'color'>> = {
     "BOTZ": { name: "Global X Robotics & Artificial Intelligence ETF", desc: "로봇 및 인공지능(AI) 관련 기업에 투자합니다.", pros: "4차 산업혁명 핵심 기술 투자", cons: "고평가 논란, 높은 변동성", yield: 0.002, growth: 0.14, risk: '높음', category: '테마' },
     "SMH": { name: "VanEck Semiconductor ETF", desc: "반도체 설계, 제조, 장비 관련 기업에 투자합니다.", pros: "AI, IT 산업의 핵심인 반도체 시장 성장 수혜", cons: "산업 사이클에 따른 극심한 변동성", yield: 0.005, growth: 0.16, risk: '높음', category: '테마' },
 
-    // Crypto Assets
-    "IBIT": { name: "iShares Bitcoin Trust", desc: "비트코인 현물을 직접 보유하여 그 가치를 추종하는 현물 ETF입니다.", pros: "비트코인에 직접 투자하는 효과, 낮은 보수", cons: "가상자산의 극심한 가격 변동성", yield: 0.0, growth: 0.20, risk: '높음', category: '가상자산' },
-    "FBTC": { name: "Fidelity Wise Origin Bitcoin Fund", desc: "비트코인 현물에 직접 투자하여 비트코인 가격을 추종합니다.", pros: "신뢰도 높은 운용사의 비트코인 투자 상품", cons: "IBIT와 유사하게 매우 높은 변동성", yield: 0.0, growth: 0.20, risk: '높음', category: '가상자산' },
-    "BITO": { name: "ProShares Bitcoin Strategy ETF", desc: "비트코인 선물 계약에 투자하여 비트코인 가격 변동을 추종합니다.", pros: "현물 보유 없이 비트코인에 투자", cons: "선물 롤오버 비용 발생, 현물과 괴리율", yield: 0.0, growth: 0.18, risk: '높음', category: '가상자산' },
-    "DAM": { name: "VanEck Digital Assets Mining ETF", desc: "디지털 자산 채굴 기업에 투자합니다.", pros: "가상자산 시장 성장의 수혜를 받는 기업에 투자", cons: "채굴 기업의 높은 운영 비용 및 규제 리스크", yield: 0.005, growth: 0.22, risk: '높음', category: '가상자산' },
-    "BITS": { name: "Global X Blockchain & Bitcoin Strategy ETF", desc: "블록체인 기술 기업과 비트코인 선물에 함께 투자합니다.", pros: "블록체인 기술과 비트코인에 동시 투자", cons: "복잡한 구조, 높은 변동성", yield: 0.01, growth: 0.19, risk: '높음', category: '가상자산' },
-    "CONY": { name: "YieldMax COIN Option Income Strategy ETF", desc: "코인베이스(COIN) 주식에 대한 커버드콜 전략으로 높은 월배당을 추구합니다.", pros: "매우 높은 월배당 가능성", cons: "주가 상승 제한, 자산 가격 하락 위험", yield: 0.73, growth: -0.1, risk: '높음', category: '가상자산' },
-    "YBTC": { name: "Roundhill Bitcoin Covered Call Strategy ETF", desc: "비트코인 현물 ETF를 기초자산으로 커버드콜 전략을 사용합니다.", pros: "비트코인으로 월배당 창출", cons: "비트코인 상승 잠재력 제한, 높은 변동성", yield: 0.56, growth: -0.05, risk: '높음', category: '가상자산' },
+    // Digital Assets
+    "IBIT": { name: "iShares Bitcoin Trust", desc: "비트코인 현물을 직접 보유하여 그 가치를 추종하는 현물 ETF입니다.", pros: "비트코인에 직접 투자하는 효과, 낮은 보수", cons: "암호화폐의 극심한 가격 변동성", yield: 0.0, growth: 0.20, risk: '높음', category: '디지털 자산' },
+    "FBTC": { name: "Fidelity Wise Origin Bitcoin Fund", desc: "비트코인 현물에 직접 투자하여 비트코인 가격을 추종합니다.", pros: "신뢰도 높은 운용사의 비트코인 투자 상품", cons: "IBIT와 유사하게 매우 높은 변동성", yield: 0.0, growth: 0.20, risk: '높음', category: '디지털 자산' },
+    "BITO": { name: "ProShares Bitcoin Strategy ETF", desc: "비트코인 선물 계약에 투자하여 비트코인 가격 변동을 추종합니다.", pros: "현물 보유 없이 비트코인에 투자", cons: "선물 롤오버 비용 발생, 현물과 괴리율", yield: 0.0, growth: 0.18, risk: '높음', category: '디지털 자산' },
+    "DAM": { name: "VanEck Digital Assets Mining ETF", desc: "디지털 자산 채굴 기업에 투자합니다.", pros: "암호화폐 시장 성장의 수혜를 받는 기업에 투자", cons: "채굴 기업의 높은 운영 비용 및 규제 리스크", yield: 0.005, growth: 0.22, risk: '높음', category: '디지털 자산' },
+    "BITS": { name: "Global X Blockchain & Bitcoin Strategy ETF", desc: "블록체인 기술 기업과 비트코인 선물에 함께 투자합니다.", pros: "블록체인 기술과 비트코인에 동시 투자", cons: "복잡한 구조, 높은 변동성", yield: 0.01, growth: 0.19, risk: '높음', category: '디지털 자산' },
+    "CONY": { name: "YieldMax COIN Option Income Strategy ETF", desc: "코인베이스(COIN) 주식에 대한 커버드콜 전략으로 높은 월배당을 추구합니다.", pros: "매우 높은 월배당 가능성", cons: "주가 상승 제한, 자산 가격 하락 위험", yield: 0.73, growth: -0.1, risk: '높음', category: '디지털 자산' },
+    "YBTC": { name: "Roundhill Bitcoin Covered Call Strategy ETF", desc: "비트코인 현물 ETF를 기초자산으로 커버드콜 전략을 사용합니다.", pros: "비트코인으로 월배당 창출", cons: "비트코인 상승 잠재력 제한, 높은 변동성", yield: 0.56, growth: -0.05, risk: '높음', category: '디지털 자산' },
 
     // Covered Call
     "JEPI": { name: "JPMorgan Equity Premium Income ETF", desc: "S&P 500 주식 기반의 커버드콜 전략을 통해 매월 높은 인컴(분배금)을 창출합니다.", pros: "매우 높은 월배당, 시장 하락 시 일부 방어", cons: "주가 상승 잠재력 제한적, 배당에 자산 매각 포함 가능", yield: 0.08, growth: 0.02, risk: '중립', category: '커버드콜' },
@@ -63,9 +63,9 @@ const allEtfData: Record<string, Omit<Etf, 'ticker' | 'color'>> = {
     "DIG": { name: "ProShares Ultra Oil & Gas", desc: "미국 석유 및 가스 지수의 일일 수익률을 2배로 추종합니다.", pros: "유가 상승 시 높은 수익 기대", cons: "에너지 가격 변동성에 크게 노출, 매우 높은 위험", yield: 0.0, growth: 0.15, risk: '높음', category: '2X' },
     "UYG": { name: "ProShares Ultra Financials", desc: "미국 금융 지수의 일일 수익률을 2배로 추종합니다.", pros: "경기 확장 국면에서 수익 극대화", cons: "경기 침체 시 매우 높은 위험", yield: 0.0, growth: 0.12, risk: '높음', category: '2X' },
     "UWM": { name: "ProShares Ultra Russell2000", desc: "러셀 2000(중소형주) 지수의 일일 수익률을 2배로 추종합니다.", pros: "중소형주 상승장에서 높은 수익 기대", cons: "대형주보다 높은 변동성, 장기 투자 위험", yield: 0.0, growth: 0.18, risk: '높음', category: '2X' },
-    "BITX": { name: "2x Bitcoin Strategy ETF", desc: "비트코인 선물 지수의 일일 수익률을 2배로 추종하는 ETF입니다.", pros: "비트코인 가격 상승 시 극대화된 수익", cons: "극심한 변동성, 가상자산 관련 규제 리스크", yield: 0.0, growth: 0.30, risk: '높음', category: '2X' },
+    "BITX": { name: "2x Bitcoin Strategy ETF", desc: "비트코인 선물 지수의 일일 수익률을 2배로 추종하는 ETF입니다.", pros: "비트코인 가격 상승 시 극대화된 수익", cons: "극심한 변동성, 암호화폐 관련 규제 리스크", yield: 0.0, growth: 0.30, risk: '높음', category: '2X' },
     "ETHU": { name: "2x Ether Strategy ETF", desc: "이더리움 선물 지수의 일일 수익률을 2배로 추종하는 ETF입니다.", pros: "이더리움 상승장에서 높은 수익 기대", cons: "BITX와 유사하게 매우 높은 위험성", yield: 0.0, growth: 0.32, risk: '높음', category: '2X' },
-    "SOLT": { name: "2x Solana Strategy ETF", desc: "솔라나(SOL)의 일일 수익률을 2배로 추종하는 가상 ETF입니다.", pros: "알트코인 대장주 중 하나인 솔라나 상승 시 초고수익", cons: "가상자산 중에서도 극도로 높은 변동성", yield: 0.0, growth: 0.35, risk: '높음', category: '2X' },
+    "SOLT": { name: "2x Solana Strategy ETF", desc: "솔라나(SOL)의 일일 수익률을 2배로 추종하는 가상 ETF입니다.", pros: "알트코인 대장주 중 하나인 솔라나 상승 시 초고수익", cons: "암호화폐 중에서도 극도로 높은 변동성", yield: 0.0, growth: 0.35, risk: '높음', category: '2X' },
     "XXRP": { name: "2x XRP Strategy ETF", desc: "리플(XRP)의 일일 수익률을 2배로 추종하는 가상 ETF입니다.", pros: "리플 가격 상승 시 높은 수익을 기대할 수 있음", cons: "소송 등 규제 리스크가 큰 자산에 대한 레버리지 투자", yield: 0.0, growth: 0.28, risk: '높음', category: '2X' },
 };
 

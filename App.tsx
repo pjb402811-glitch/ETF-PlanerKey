@@ -13,6 +13,7 @@ import AlertModal from './components/AlertModal';
 import Navigation from './components/Navigation';
 import ApiKeyModal from './components/ApiKeyModal';
 import ConfirmModal from './components/ConfirmModal';
+import FearAndGreedIndex from './components/FearAndGreedIndex';
 
 const curateEtfPoolForAI = (allEtfs: Etf[], riskProfile: RiskProfile, investmentTheme: InvestmentTheme): Etf[] => {
     const selectEtfsByRisk = (etfs: Etf[]): Etf[] => {
@@ -50,7 +51,7 @@ const curateEtfPoolForAI = (allEtfs: Etf[], riskProfile: RiskProfile, investment
     switch (investmentTheme) {
         case 'max-growth':
             themeFilteredEtfs = allEtfs.filter(etf => 
-                (growthCategories.includes(etf.category) || highGrowthSectors.includes(etf.ticker) || etf.category === '가상자산') &&
+                (growthCategories.includes(etf.category) || highGrowthSectors.includes(etf.ticker) || etf.category === '디지털 자산') &&
                 etf.growth >= 0.10 &&
                 etf.yield < 0.03
             );
@@ -64,7 +65,7 @@ const curateEtfPoolForAI = (allEtfs: Etf[], riskProfile: RiskProfile, investment
             themeFilteredEtfs = allEtfs.filter(etf => dividendCategories.includes(etf.category));
             break;
         case 'crypto-focused':
-            themeFilteredEtfs = allEtfs.filter(etf => etf.category === '가상자산');
+            themeFilteredEtfs = allEtfs.filter(etf => etf.category === '디지털 자산');
             break;
         case '2x-growth':
             themeFilteredEtfs = allEtfs.filter(etf => etf.category === '2X');
@@ -150,7 +151,7 @@ const migratePortfolioData = (p: any): PortfolioMonitorData => {
     return migrated;
 };
 
-const categoryOrder = ['시장 대표', '배당 성장', '고배당', '커버드콜', '성장주', '섹터', '테마', '2X', '가상자산'];
+const categoryOrder = ['시장 대표', '배당 성장', '고배당', '커버드콜', '성장주', '섹터', '테마', '2X', '디지털 자산'];
 
 const sortCategories = (categories: string[]): string[] => {
     return [...categories].sort((a, b) => {
@@ -655,6 +656,7 @@ const App: React.FC = () => {
             />
             <div className="container mx-auto p-4 md:p-8 max-w-5xl">
                 <Header onSettingsClick={() => setIsApiKeyModalOpen(true)} />
+                <FearAndGreedIndex />
                 <Navigation 
                     activeTab={activeTab}
                     setActiveTab={setActiveTab}

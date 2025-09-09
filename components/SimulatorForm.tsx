@@ -96,7 +96,7 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
                             <option value="max-growth">성장 집중 (배당 최소화)</option>
                             <option value="tech-focused">미래 기술 집중 (성장형)</option>
                             <option value="dividend-focused">안정 고배당 집중 (배당형)</option>
-                            <option value="crypto-focused">가상자산 집중 (초고위험 성장형)</option>
+                            <option value="crypto-focused">디지털자산 집중 (초고위험 성장형)</option>
                             <option value="2x-growth">2X 레버리지 성장 (초고위험)</option>
                         </select>
                     </div>
