@@ -14,6 +14,7 @@ const investmentThemeMap: Record<InvestmentTheme, string> = {
     'dividend-focused': '안정 고배당 집중',
     'crypto-focused': '디지털자산 집중',
     '2x-growth': '2X 레버리지 성장',
+    '2x-mixed': '2X 레버리지 + 혼합 테마',
 };
 
 
@@ -89,6 +90,7 @@ export const generateAiPortfolio = async (
     apiKey: string,
     riskProfile: RiskProfile, 
     investmentTheme: InvestmentTheme, 
+    secondaryTheme: InvestmentTheme | null,
     availableEtfs: Etf[]
 ): Promise<PortfolioScenario | null> => {
     if (!apiKey) {
@@ -102,11 +104,23 @@ export const generateAiPortfolio = async (
     }));
 
     const riskProfileKorean = riskProfileMap[riskProfile];
-    const investmentThemeKorean = investmentThemeMap[investmentTheme];
+    let investmentThemeKorean = investmentThemeMap[investmentTheme];
+    let mixedThemeInstructions = '';
+
+    if (investmentTheme === '2x-mixed' && secondaryTheme && secondaryTheme in investmentThemeMap) {
+        const secondaryThemeKorean = investmentThemeMap[secondaryTheme];
+        investmentThemeKorean = `${investmentThemeMap['2x-growth']} 테마와 ${secondaryThemeKorean} 테마를 50:50으로 혼합`;
+        mixedThemeInstructions = `
+    **Crucial Mixed Theme Allocation Rule:**
+    - The final portfolio MUST have approximately 50% of its total weight allocated to ETFs from the '2X' category.
+    - The remaining 50% MUST be allocated to ETFs that align with the '${secondaryThemeKorean}' theme.
+    - The portfolio name and description must clearly state that this is a high-risk, mixed portfolio combining 2X leverage with another theme. For example: "초고수익 추구형 2X 레버리지 및 기술주 혼합 포트폴리오".
+    `;
+    }
 
     const prompt = `Your task is to act as an expert portfolio manager. The user's investment profile is '${riskProfileKorean}' and their chosen investment theme is '${investmentThemeKorean}'.
     Based on this profile and theme, create a creative and insightful investment portfolio using ONLY the ETFs from the provided list.
-
+    ${mixedThemeInstructions}
     **Crucial Instructions:**
     1.  **Portfolio Naming and Description:** This is a critical step. The name and description must be insightful and accurately reflect the portfolio's strategy.
         - For high-risk themes like '2X 레버리지 성장' or '디지털자산 집중', the name and description MUST acknowledge the high-risk, high-return nature. AVOID using words like '균형' (balanced) or '안정' (stable). Instead, use more appropriate and descriptive phrases like '높은 변동성을 견디는' (withstanding high volatility) or '초고수익 추구형' (ultra-high-return seeking). A user provided an excellent example name: "높은 변동성을 견디는 2X레버리지 성장포트폴리오". Use this as inspiration for your creativity.
@@ -192,7 +206,7 @@ export const generateAiPortfolio = async (
         
         let displayRisk: '낮음' | '중립' | '높음' = '중립';
         if (investmentTheme === 'dividend-focused') displayRisk = '낮음';
-        if (['tech-focused', 'crypto-focused', 'max-growth', '2x-growth'].includes(investmentTheme)) displayRisk = '높음';
+        if (['tech-focused', 'crypto-focused', 'max-growth', '2x-growth', '2x-mixed'].includes(investmentTheme)) displayRisk = '높음';
         if (investmentTheme === 'ai-recommended') {
              if (riskProfile === 'conservative') displayRisk = '낮음';
              if (riskProfile === 'aggressive') displayRisk = '높음';

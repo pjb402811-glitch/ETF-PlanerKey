@@ -36,7 +36,8 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, index, isPrimary, onSel
 
     const handleCopySummary = async () => {
         const portfolioComposition = Object.entries(result.scenario.weights)
-            .map(([ticker, weight]) => `- ${ticker}: ${(weight * 100).toFixed(1)}%`)
+            // FIX: Cast weight to a number to ensure correct arithmetic operation.
+            .map(([ticker, weight]) => `- ${ticker}: ${(Number(weight) * 100).toFixed(1)}%`)
             .join('\n');
 
         const summaryText = `*자녀부자플랜 시뮬레이션 결과*
@@ -88,9 +89,11 @@ ${portfolioComposition}
                             <div key={ticker} className="flex justify-between items-center">
                                 <span className="font-bold text-gray-300 w-16">{ticker}</span>
                                 <div className="flex-grow h-2.5 bg-gray-700 rounded-full mx-3">
-                                    <div className={`h-2.5 bg-cyan-500 rounded-full`} style={{ width: `${weight * 100}%` }}></div>
+                                    {/* FIX: Cast weight to a number to ensure correct arithmetic operation. */}
+                                    <div className={`h-2.5 bg-cyan-500 rounded-full`} style={{ width: `${Number(weight) * 100}%` }}></div>
                                 </div>
-                                <span className="w-12 text-right text-gray-300">{(weight * 100).toFixed(1)}%</span>
+                                {/* FIX: Cast weight to a number to ensure correct arithmetic operation. */}
+                                <span className="w-12 text-right text-gray-300">{(Number(weight) * 100).toFixed(1)}%</span>
                             </div>
                         ))}
                     </div>

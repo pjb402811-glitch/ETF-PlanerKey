@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Etf, PortfolioScenario, SimulationResult, RiskProfile, InvestmentTheme, SimulationGoal, PortfolioMonitorData } from './types';
 import { getEtfData } from './services/etfService';
@@ -244,12 +246,14 @@ const App: React.FC = () => {
             let data: Record<string, Etf>;
             const savedEtfs = localStorage.getItem('userEtfData');
             if (savedEtfs) {
-                data = JSON.parse(savedEtfs);
+                // FIX: Cast the parsed JSON to the correct type to ensure type safety.
+                data = JSON.parse(savedEtfs) as Record<string, Etf>;
             } else {
                 const defaultData = await getEtfData();
                 data = defaultData.data;
             }
-            const categories = [...new Set(Object.values(data).map(etf => etf.category))];
+            // FIX: Explicitly type `etf` to avoid it being inferred as `unknown`.
+            const categories = [...new Set(Object.values(data).map((etf: Etf) => etf.category))];
             setEtfData(data);
             setEtfCategories(sortCategories(categories));
         } catch (error) {
@@ -356,7 +360,8 @@ const App: React.FC = () => {
     const handleSaveEtf = (etfToSave: Etf) => {
         const newEtfData = { ...etfData, [etfToSave.ticker]: etfToSave };
         setEtfData(newEtfData);
-        setEtfCategories(sortCategories([...new Set(Object.values(newEtfData).map(etf => etf.category))]));
+        // FIX: Explicitly type `etf` to avoid it being inferred as `unknown`.
+        setEtfCategories(sortCategories([...new Set(Object.values(newEtfData).map((etf: Etf) => etf.category))]));
         localStorage.setItem('userEtfData', JSON.stringify(newEtfData));
         showAlert("저장 완료", `${etfToSave.ticker} ETF 정보가 저장되었습니다.`);
     };
@@ -369,7 +374,8 @@ const App: React.FC = () => {
             onConfirm: () => {
                 const { [tickerToDelete]: deleted, ...rest } = etfData;
                 setEtfData(rest);
-                setEtfCategories(sortCategories([...new Set(Object.values(rest).map(etf => etf.category))]));
+                // FIX: Explicitly type `etf` to avoid it being inferred as `unknown`.
+                setEtfCategories(sortCategories([...new Set(Object.values(rest).map((etf: Etf) => etf.category))]));
                 localStorage.setItem('userEtfData', JSON.stringify(rest));
                 setConfirmInfo(null);
                 showAlert("삭제 완료", `${tickerToDelete} ETF가 삭제되었습니다.`);
@@ -548,6 +554,7 @@ const App: React.FC = () => {
         investmentPeriod: number,
         riskProfile: RiskProfile,
         investmentTheme: InvestmentTheme,
+        secondaryTheme: InvestmentTheme | null,
         inflationRate: number
     ) => {
         if (!apiKey) {
@@ -565,15 +572,28 @@ const App: React.FC = () => {
         setLoadingMessage('AI가 고객님의 투자 성향과 테마에 맞는 포트폴리오를 구성 중입니다...');
 
         try {
-            const effectiveRiskProfile = investmentTheme !== 'ai-recommended' ? 'aggressive' : riskProfile;
-            const etfsForAi = curateEtfPoolForAI(Object.values(etfData), effectiveRiskProfile, investmentTheme);
+            let etfsForAi: Etf[];
+            let effectiveRiskProfile = riskProfile;
+
+            if (investmentTheme === '2x-mixed' && secondaryTheme) {
+                effectiveRiskProfile = 'aggressive';
+                const etfsFor2x = curateEtfPoolForAI(Object.values(etfData), 'aggressive', '2x-growth');
+                const etfsForSecondary = curateEtfPoolForAI(Object.values(etfData), 'aggressive', secondaryTheme);
+                const combinedEtfs = [...etfsFor2x, ...etfsForSecondary];
+                const uniqueEtfs = Array.from(new Map(combinedEtfs.map(etf => [etf.ticker, etf])).values());
+                etfsForAi = uniqueEtfs;
+            } else {
+                effectiveRiskProfile = investmentTheme !== 'ai-recommended' ? 'aggressive' : riskProfile;
+                etfsForAi = curateEtfPoolForAI(Object.values(etfData), effectiveRiskProfile, investmentTheme);
+            }
+            
             if (etfsForAi.length < 4) {
                  showAlert("포트폴리오 구성 불가", "선택하신 테마에 맞는 ETF가 4개 미만이라 AI 포트폴리오를 구성할 수 없습니다. 다른 테마를 선택해주세요.");
                  setIsLoading(false);
                  return;
             }
 
-            const aiPortfolio = await generateAiPortfolio(apiKey, riskProfile, investmentTheme, etfsForAi);
+            const aiPortfolio = await generateAiPortfolio(apiKey, effectiveRiskProfile, investmentTheme, secondaryTheme, etfsForAi);
             
             let scenariosToSimulate: PortfolioScenario[] = [];
             if (aiPortfolio) {
@@ -581,16 +601,67 @@ const App: React.FC = () => {
             } else {
                 showAlert("AI 포트폴리오 생성 오류", "AI 포트폴리오 생성에 실패했습니다. 기본 시나리오를 바탕으로 결과를 표시합니다.");
             }
-
-            const scenariosToAdd = investmentTheme === '2x-growth' 
-                ? leveragedScenarios 
-                : defaultScenarios;
-
-            Object.values(scenariosToAdd).forEach(scenario => {
-                if (!scenariosToSimulate.some(s => s.id === scenario.id)) {
-                    scenariosToSimulate.push(scenario);
+            
+            if (investmentTheme === '2x-mixed' && secondaryTheme) {
+                const secondaryThemeEtfs: Record<string, { [ticker: string]: number }> = {
+                    'max-growth': { 'VGT': 0.25, 'QQQ': 0.25 },
+                    'tech-focused': { 'SMH': 0.25, 'XLK': 0.25 },
+                    'dividend-focused': { 'SCHD': 0.3, 'JEPI': 0.2 },
+                    'crypto-focused': { 'IBIT': 0.3, 'FBTC': 0.2 },
+                    'ai-recommended': { 'VOO': 0.25, 'SCHD': 0.25 },
+                };
+                
+                const themeNameMap: Record<string, string> = {
+                    'max-growth': '성장주',
+                    'tech-focused': '기술주',
+                    'dividend-focused': '배당주',
+                    'crypto-focused': '디지털자산',
+                    'ai-recommended': '대표지수',
+                };
+        
+                const secondaryEtfs = secondaryThemeEtfs[secondaryTheme as keyof typeof secondaryThemeEtfs];
+                const secondaryName = themeNameMap[secondaryTheme as keyof typeof themeNameMap];
+                
+                if (secondaryEtfs && secondaryName) {
+                    Object.values(leveragedScenarios).forEach(scenario => {
+                        const newId = `${scenario.id}-mixed-${secondaryTheme}`;
+                        if (!scenariosToSimulate.some(s => s.id === newId)) {
+                            const newWeights: { [ticker: string]: number } = {};
+                            
+                            Object.entries(scenario.weights).forEach(([ticker, weight]) => {
+                                newWeights[ticker] = weight * 0.5;
+                            });
+        
+                            Object.assign(newWeights, secondaryEtfs);
+        
+                            const mixedScenario: PortfolioScenario = {
+                                ...scenario,
+                                id: newId,
+                                name: `${scenario.name.replace(' 포트폴리오', '')} + ${secondaryName} 혼합`,
+                                desc: `${scenario.desc} 여기에 ${secondaryName} 테마를 50% 결합하여 위험을 일부 분산시키면서 성장을 추구합니다.`,
+                                weights: newWeights,
+                            };
+                            scenariosToSimulate.push(mixedScenario);
+                        }
+                    });
+                } else {
+                     Object.values(leveragedScenarios).forEach(scenario => {
+                        if (!scenariosToSimulate.some(s => s.id === scenario.id)) {
+                            scenariosToSimulate.push(scenario);
+                        }
+                    });
                 }
-            });
+            } else {
+                const scenariosToAdd = (investmentTheme === '2x-growth')
+                    ? leveragedScenarios
+                    : defaultScenarios;
+        
+                Object.values(scenariosToAdd).forEach(scenario => {
+                    if (!scenariosToSimulate.some(s => s.id === scenario.id)) {
+                        scenariosToSimulate.push(scenario);
+                    }
+                });
+            }
 
             const goalInWon: SimulationGoal = {
                 type: goal.type,
@@ -607,7 +678,7 @@ const App: React.FC = () => {
             const sortedResults = results.sort((a, b) => {
                 if (aiPortfolio && a.scenario.id === aiPortfolio.id) return -1;
                 if (aiPortfolio && b.scenario.id === aiPortfolio.id) return 1;
-                if (investmentTheme !== '2x-growth') {
+                if (investmentTheme !== '2x-growth' && investmentTheme !== '2x-mixed') {
                     if (a.scenario.id === riskProfile) return -1;
                     if (b.scenario.id === riskProfile) return 1;
                 }

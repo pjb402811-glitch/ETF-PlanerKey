@@ -23,7 +23,8 @@ const EtfInfoSection: React.FC<EtfInfoSectionProps> = ({ etfData, categories, ap
     const allCategories = ['전체', ...categories];
     const etfsToDisplay = activeCategory === '전체'
         ? Object.values(etfData)
-        : Object.values(etfData).filter(etf => etf.category === activeCategory);
+        // FIX: Add explicit type to ensure `etf` is correctly inferred as `Etf`.
+        : Object.values(etfData).filter((etf: Etf) => etf.category === activeCategory);
 
     const isCompactView = activeCategory === '전체' && !isEditing;
 
@@ -90,7 +91,8 @@ const EtfInfoSection: React.FC<EtfInfoSectionProps> = ({ etfData, categories, ap
                 ))}
             </div>
             <div className={gridClasses}>
-                {etfsToDisplay.map(etf => 
+                {/* FIX: Add explicit type to ensure `etf` is correctly inferred as `Etf`. */}
+                {etfsToDisplay.map((etf: Etf) => 
                     isCompactView 
                     ? <CompactEtfCard key={etf.ticker} etf={etf} onClick={handleCompactCardClick} /> 
                     : <EtfCard 
@@ -114,7 +116,7 @@ const EtfInfoSection: React.FC<EtfInfoSectionProps> = ({ etfData, categories, ap
                     apiKey={apiKey}
                     onSave={handleSave}
                     onClose={() => setModalEtf(null)}
-                    existingTickers={Object.keys(etfData).filter(t => modalEtf !== 'new' && modalEtf && t !== modalEtf.ticker)}
+                    existingTickers={Object.keys(etfData).filter(t => modalEtf !== 'new' && modalEtf && t !== (modalEtf as Etf).ticker)}
                     categories={categories}
                 />
             )}

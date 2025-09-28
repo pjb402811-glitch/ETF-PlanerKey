@@ -8,6 +8,7 @@ interface SimulatorFormProps {
         investmentPeriod: number,
         riskProfile: RiskProfile,
         investmentTheme: InvestmentTheme,
+        secondaryTheme: InvestmentTheme | null,
         inflationRate: number
     ) => void;
 }
@@ -19,6 +20,14 @@ const formatNumberWithCommas = (value: string): string => {
     return num.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
+const secondaryThemeOptions: { value: InvestmentTheme; label: string }[] = [
+    { value: 'max-growth', label: '성장 집중 (배당 최소화)' },
+    { value: 'tech-focused', label: '미래 기술 집중 (성장형)' },
+    { value: 'dividend-focused', label: '안정 고배당 집중 (배당형)' },
+    { value: 'crypto-focused', label: '디지털자산 집중 (초고위험 성장형)' },
+    { value: 'ai-recommended', label: 'AI 추천 종합' },
+];
+
 const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
     const [goalType, setGoalType] = useState<'dividend' | 'asset' | 'investment'>('dividend');
     const [targetDividend, setTargetDividend] = useState('300');
@@ -29,6 +38,7 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
     const [inflationRate, setInflationRate] = useState('3');
     const [riskProfile, setRiskProfile] = useState<RiskProfile>('balanced');
     const [investmentTheme, setInvestmentTheme] = useState<InvestmentTheme>('ai-recommended');
+    const [secondaryTheme, setSecondaryTheme] = useState<InvestmentTheme>('max-growth');
     
     const [isRiskProfileDisabled, setIsRiskProfileDisabled] = useState(false);
     const [isDividendGoalDisabled, setIsDividendGoalDisabled] = useState(false);
@@ -37,7 +47,7 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
     useEffect(() => {
         setIsRiskProfileDisabled(investmentTheme !== 'ai-recommended');
 
-        const dividendDisabled = ['max-growth', 'crypto-focused', '2x-growth'].includes(investmentTheme);
+        const dividendDisabled = ['max-growth', 'crypto-focused', '2x-growth', '2x-mixed'].includes(investmentTheme);
         const assetDisabled = investmentTheme === 'dividend-focused';
         
         setIsDividendGoalDisabled(dividendDisabled);
@@ -81,7 +91,7 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
             return;
         }
         
-        onSubmit(goal, currentAgeVal, investmentPeriodVal, riskProfile, investmentTheme, inflationRateVal);
+        onSubmit(goal, currentAgeVal, investmentPeriodVal, riskProfile, investmentTheme, investmentTheme === '2x-mixed' ? secondaryTheme : null, inflationRateVal);
     };
 
     return (
@@ -98,16 +108,26 @@ const SimulatorForm: React.FC<SimulatorFormProps> = ({ onSubmit }) => {
                             <option value="dividend-focused">안정 고배당 집중 (배당형)</option>
                             <option value="crypto-focused">디지털자산 집중 (초고위험 성장형)</option>
                             <option value="2x-growth">2X 레버리지 성장 (초고위험)</option>
+                            <option value="2x-mixed">2X 레버리지 + 혼합 테마</option>
                         </select>
                     </div>
-                     <div style={{ opacity: isRiskProfileDisabled ? 0.5 : 1 }}>
-                        <label htmlFor="risk-profile" className="block text-sm font-medium text-gray-300 mb-2">투자 성향 (AI 추천 종합 선택 시)</label>
-                        <select id="risk-profile" value={riskProfile} onChange={e => setRiskProfile(e.target.value as RiskProfile)} className="w-full bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" disabled={isRiskProfileDisabled}>
-                            <option value="conservative">안정 추구형 (배당금 중심)</option>
-                            <option value="balanced">균형 성장형 (배당+성장)</option>
-                            <option value="aggressive">적극 성장형 (성장 중심)</option>
-                        </select>
-                    </div>
+                     {investmentTheme === '2x-mixed' ? (
+                         <div>
+                            <label htmlFor="secondary-theme" className="block text-sm font-medium text-gray-300 mb-2">혼합할 테마 선택 (50%)</label>
+                            <select id="secondary-theme" value={secondaryTheme} onChange={e => setSecondaryTheme(e.target.value as InvestmentTheme)} className="w-full bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                                {secondaryThemeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                            </select>
+                        </div>
+                    ) : (
+                        <div style={{ opacity: isRiskProfileDisabled ? 0.5 : 1 }}>
+                            <label htmlFor="risk-profile" className="block text-sm font-medium text-gray-300 mb-2">투자 성향 (AI 추천 종합 선택 시)</label>
+                            <select id="risk-profile" value={riskProfile} onChange={e => setRiskProfile(e.target.value as RiskProfile)} className="w-full bg-gray-700 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" disabled={isRiskProfileDisabled}>
+                                <option value="conservative">안정 추구형 (배당금 중심)</option>
+                                <option value="balanced">균형 성장형 (배당+성장)</option>
+                                <option value="aggressive">적극 성장형 (성장 중심)</option>
+                            </select>
+                        </div>
+                    )}
                     
                     <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-300 mb-2">시뮬레이션 기준 선택</label>

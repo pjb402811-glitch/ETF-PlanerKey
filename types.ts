@@ -22,7 +22,8 @@ export type InvestmentTheme =
     | 'tech-focused'
     | 'crypto-focused'
     | 'max-growth'
-    | '2x-growth';
+    | '2x-growth'
+    | '2x-mixed';
 
 export type SimulationGoal = 
     | { type: 'dividend'; value: number } // value in 10,000 KRW

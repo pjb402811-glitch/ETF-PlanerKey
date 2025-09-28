@@ -62,7 +62,7 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
         const numericValue = parseFloat(value.replace(/,/g, '')) * 10000 || 0;
         const year = data.currentTrackingYear;
         
-        const newData = deepClone(data);
+        const newData = deepClone(data) as PortfolioMonitorData;
         newData.trackingHistory[year][monthIndex].investments[ticker] = numericValue;
         onChange(newData);
     };
@@ -71,7 +71,7 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
         const numericValue = parseFloat(value.replace(/,/g, '')) * 10000 || 0;
         const year = data.currentTrackingYear;
 
-        const newData = deepClone(data);
+        const newData = deepClone(data) as PortfolioMonitorData;
         if (!newData.yearlyAdjustments) newData.yearlyAdjustments = {};
         if (!newData.yearlyAdjustments[year]) newData.yearlyAdjustments[year] = {};
         
@@ -80,13 +80,14 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
     };
     
     const handlePortfolioWeightChange = (ticker: string, newWeight: number) => {
-        const newData = deepClone(data);
+        const newData = deepClone(data) as PortfolioMonitorData;
         newData.portfolio.weights[ticker] = newWeight / 100;
         onChange(newData);
     };
 
     const handlePortfolioTickerChange = (oldTicker: string, newTicker: string) => {
-        const newData = deepClone(data);
+        // FIX: Cast the result of deepClone to PortfolioMonitorData to ensure type safety.
+        const newData = deepClone(data) as PortfolioMonitorData;
         const newWeights: { [key: string]: number } = {};
         Object.entries(data.portfolio.weights).forEach(([key, value]) => {
             if (key === oldTicker) {
@@ -118,7 +119,7 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
         const currentTickers = Object.keys(data.portfolio.weights);
         const availableToAdd = Object.keys(etfData).find(t => !currentTickers.includes(t));
         if (availableToAdd) {
-            const newData = deepClone(data);
+            const newData = deepClone(data) as PortfolioMonitorData;
             newData.portfolio.weights[availableToAdd] = 0;
             for (const year in newData.trackingHistory) {
                 newData.trackingHistory[year].forEach((monthEntry: MonthlyEntry) => {
@@ -136,7 +137,7 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
     };
     
     const handleRemoveEtf = (tickerToRemove: string) => {
-        const newData = deepClone(data);
+        const newData = deepClone(data) as PortfolioMonitorData;
         delete newData.portfolio.weights[tickerToRemove];
 
         for (const year in newData.trackingHistory) {
@@ -157,7 +158,7 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
 
         if (data.trackingHistory[newYear]) return;
         
-        const newData = deepClone(data);
+        const newData = deepClone(data) as PortfolioMonitorData;
         const initialInvestments: { [ticker: string]: number } = {};
         Object.keys(data.portfolio.weights).forEach(ticker => { initialInvestments[ticker] = 0; });
         
@@ -175,7 +176,8 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
         const totals: { [ticker: string]: number } = {};
         tickers.forEach(t => { if(t) totals[t] = 0; });
 
-        Object.values(data.trackingHistory).flat().forEach(monthlyEntry => {
+        // FIX: Add explicit type to ensure `monthlyEntry` is correctly inferred as `MonthlyEntry`.
+        Object.values(data.trackingHistory).flat().forEach((monthlyEntry: MonthlyEntry) => {
             tickers.forEach(ticker => {
                 if (totals.hasOwnProperty(ticker)) {
                     totals[ticker] += monthlyEntry.investments[ticker] || 0;
@@ -184,7 +186,8 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
         });
 
         if (data.yearlyAdjustments) {
-            Object.values(data.yearlyAdjustments).forEach(yearAdjustments => {
+            // FIX: Add explicit type to ensure `yearAdjustments` is correctly inferred.
+            Object.values(data.yearlyAdjustments).forEach((yearAdjustments: { [key: string]: number; }) => {
                 tickers.forEach(ticker => {
                     if (totals.hasOwnProperty(ticker) && yearAdjustments) {
                         totals[ticker] += yearAdjustments[ticker] || 0;
@@ -196,7 +199,8 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
         return totals;
     }, [data.trackingHistory, data.yearlyAdjustments, tickers]);
 
-    const totalPrincipal = useMemo(() => Object.values(cumulativePrincipalByTicker).reduce((sum, val) => sum + val, 0), [cumulativePrincipalByTicker]);
+    // FIX: Add explicit types to `reduce` to ensure correct arithmetic operation.
+    const totalPrincipal = useMemo(() => Object.values(cumulativePrincipalByTicker).reduce((sum: number, val: number) => sum + val, 0), [cumulativePrincipalByTicker]);
 
     const yearlyMonthlyTotalsByTicker = useMemo(() => {
         return tickers.reduce((acc, ticker) => {
@@ -205,11 +209,13 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
         }, {} as {[key: string]: number});
     }, [currentYearEntries, tickers]);
 
-    const yearlyMonthlyGrandTotal = useMemo(() => Object.values(yearlyMonthlyTotalsByTicker).reduce((sum, val) => sum + val, 0), [yearlyMonthlyTotalsByTicker]);
+    // FIX: Add explicit types to `reduce` to ensure correct arithmetic operation.
+    const yearlyMonthlyGrandTotal = useMemo(() => Object.values(yearlyMonthlyTotalsByTicker).reduce((sum: number, val: number) => sum + val, 0), [yearlyMonthlyTotalsByTicker]);
 
     const yearlyAdjustmentByTicker = useMemo(() => data.yearlyAdjustments?.[data.currentTrackingYear] || {}, [data.yearlyAdjustments, data.currentTrackingYear]);
     
-    const yearlyAdjustmentTotal = useMemo(() => Object.values(yearlyAdjustmentByTicker).reduce((sum, val) => sum + val, 0), [yearlyAdjustmentByTicker]);
+    // FIX: Add explicit types to `reduce` to ensure correct arithmetic operation.
+    const yearlyAdjustmentTotal = useMemo(() => Object.values(yearlyAdjustmentByTicker).reduce((sum: number, val: number) => sum + val, 0), [yearlyAdjustmentByTicker]);
     
     const yearlyGrandTotalByTicker = useMemo(() => {
          const totals: {[key:string]: number} = {};
@@ -225,7 +231,8 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
     const returnRate = totalPrincipal > 0 ? (totalProfit / totalPrincipal) * 100 : 0;
     const profitColor = totalProfit > 0 ? 'text-green-400' : totalProfit < 0 ? 'text-red-400' : 'text-gray-300';
     
-    const totalWeightSum = isEditing ? Object.values(data.portfolio.weights).reduce((sum, w) => sum + w, 0) * 100 : 0;
+    // FIX: Add explicit types to `reduce` to ensure correct arithmetic operation.
+    const totalWeightSum = isEditing ? Object.values(data.portfolio.weights).reduce((sum: number, w: number) => sum + w, 0) * 100 : 0;
     const totalWeightColor = Math.abs(totalWeightSum - 100) < 0.1 ? 'text-green-400' : 'text-red-400';
     
     const projection = data.simulationProjection;
@@ -376,7 +383,8 @@ const PortfolioTrackerDetail: React.FC<PortfolioTrackerDetailProps> = ({ data, e
                             </tr>
                         </thead>
                         <tbody>
-                            {currentYearEntries.map((entry, index) => {
+                            {/* FIX: Add explicit type to ensure `entry` is correctly inferred as `MonthlyEntry`. */}
+                            {currentYearEntries.map((entry: MonthlyEntry, index) => {
                                 const monthlyTotal = tickers.reduce((s, t) => s + (entry.investments[t] || 0), 0);
                                 return (
                                 <tr key={entry.month} className="border-b border-gray-700 hover:bg-gray-800/50">
@@ -479,7 +487,8 @@ const MyPortfolioSection: React.FC<MyPortfolioSectionProps> = ({ portfolios, etf
 
     const handleSaveClick = () => {
         if (editingData) {
-            const totalWeight = Object.values(editingData.portfolio.weights).reduce((sum, w) => sum + w, 0);
+            // FIX: Add explicit types to `reduce` to ensure correct arithmetic operation.
+            const totalWeight = Object.values(editingData.portfolio.weights).reduce((sum: number, w: number) => sum + w, 0);
             if (Math.abs(totalWeight - 1) > 0.001) {
                 alert(`포트폴리오 비중의 총합이 100%가 되어야 합니다. (현재: ${(totalWeight * 100).toFixed(1)}%)`);
                 return;

@@ -65,10 +65,11 @@ const PurchaseCalculator: React.FC<PurchaseCalculatorProps> = ({ portfolios }) =
         
         const totalInvestmentKRW = parseFloat(totalInvestment.replace(/,/g, '')) * 10000 || 0;
         const results = Object.entries(selectedPortfolio.portfolio.weights)
-            .sort(([, weightA], [, weightB]) => weightB - weightA)
+            .sort(([, weightA], [, weightB]) => Number(weightB) - Number(weightA))
             .map(([ticker, weight]) => {
                 const price = parseFloat(etfPrices[ticker]?.replace(/,/g, '')) || 0;
-                const targetAmount = totalInvestmentKRW * weight;
+                // FIX: Cast weight to a number to ensure correct arithmetic operation.
+                const targetAmount = totalInvestmentKRW * Number(weight);
                 const sharesToBuy = price > 0 ? targetAmount / price : 0;
                 const actualCost = sharesToBuy * price;
 
@@ -145,7 +146,7 @@ const PurchaseCalculator: React.FC<PurchaseCalculatorProps> = ({ portfolios }) =
                         {calculationResults.map(item => (
                             <tr key={item.ticker} className="border-b border-gray-700 hover:bg-gray-800/50">
                                 <td className="px-4 py-2 font-medium text-white whitespace-nowrap">{item.ticker}</td>
-                                <td className="px-4 py-2 text-center">{(item.weight * 100).toFixed(1)}%</td>
+                                <td className="px-4 py-2 text-center">{(Number(item.weight) * 100).toFixed(1)}%</td>
                                 <td className="px-4 py-2 text-right">{formatCurrency(item.targetAmount, '원')}</td>
                                 <td className="px-4 py-2">
                                     <input
